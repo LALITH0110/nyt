@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spelling Bee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .gamestage.wide{max-width:920px}
+  .hc-layout{display:flex;gap:28px;width:100%;align-items:flex-start;justify-content:center}
+  .hc-left{flex:1;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .hc-right{flex:1;max-width:390px}
+
+  /* rank bar */
+  .rank-row{display:flex;align-items:center;gap:10px;width:100%}
+  .rank-name{font-size:13px;font-weight:700;min-width:94px}
+  .rank-track{
+    flex:1;height:2px;background:var(--rule);position:relative;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .rank-dot{width:9px;height:9px;border-radius:50%;background:var(--rule);z-index:1}
+  .rank-dot.on{background:var(--c-bee)}
+  .rank-dot.cur{
+    width:26px;height:26px;background:var(--c-bee);
+    display:grid;place-items:center;font-size:12px;font-weight:700;
+  }
+
+  /* typed word */
+  .hc-input{
+    height:52px;display:flex;align-items:center;justify-content:center;
+    flex-wrap:nowrap;overflow:hidden;width:100%;
+    font-family:var(--sans);font-size:32px;font-weight:800;letter-spacing:.04em;
+    line-height:1;text-transform:uppercase;
+  }
+  .hc-input span{flex:0 0 auto}
+  .hc-input .center{color:var(--c-bee);-webkit-text-stroke:.6px #b89a00}
+  .hc-input .bad{color:var(--gray-light)}
+  .caret{
+    display:inline-block;width:2px;height:32px;background:var(--c-bee);
+    animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+
+  /* hive */
+  :root{--hexw:108px}
+  .hive{position:relative;width:calc(var(--hexw) * 2.5);height:calc(var(--hexw) * 2.62);margin:4px 0}
+  .hex{
+    position:absolute;left:50%;top:50%;
+    width:var(--hexw);height:calc(var(--hexw) * .866);
+    margin-left:calc(var(--hexw) / -2);
+    margin-top:calc(var(--hexw) * -.433);
+    clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);
+    background:#e6e6e6;border:none;cursor:pointer;
+    display:grid;place-items:center;
+    font-family:var(--sans);font-size:32px;font-weight:800;text-transform:uppercase;
+    color:var(--ink);transition:transform .08s ease,filter .12s ease;
+  }
+  .hex{transform:scale(.94)}          /* small gap between neighbours */
+  .hex:hover{filter:brightness(.9)}
+  .hex:active{filter:brightness(.82)}
+  .hex.center{background:var(--c-bee)}
+
+  .hc-controls{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .hc-controls .btn{font-size:15px;padding:13px 27px}
+  .circle-btn{
+    width:52px;height:52px;border-radius:50%;border:1px solid var(--rule);
+    background:#fff;cursor:pointer;display:grid;place-items:center;
+  }
+  .circle-btn:hover{background:var(--paper-tint)}
+
+  /* found words */
+  .found-box{border:1px solid var(--rule);border-radius:5px;padding:12px 14px;width:100%}
+  .found-head{
+    font-size:13px;color:var(--gray);border-bottom:1px solid var(--rule);
+    padding-bottom:8px;margin-bottom:8px;display:flex;justify-content:space-between;
+  }
+  .found-words{
+    display:flex;flex-wrap:wrap;gap:0 14px;max-height:270px;overflow:auto;
+    column-count:2;column-gap:14px;display:block;
+  }
+  .found-words span{
+    display:block;font-size:14px;padding:3px 0;border-bottom:1px solid #f0f0f0;
+    text-transform:capitalize;break-inside:avoid;
+  }
+  .found-words span.pangram{font-weight:800;color:#b89a00}
+  .found-words span.bonus{color:var(--gray-light);font-style:italic}
+  @media (max-width:720px){
+    :root{--hexw:82px}
+    .hc-layout{flex-direction:column;align-items:center}
+    .hc-right{max-width:390px;width:100%}
+    .found-words{max-height:200px}
+  }
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">Spelling Bee</h1>
+  <div class="gamebar-right">
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage wide">
+  <div class="rank-row">
+    <div class="rank-name" id="rank-name">Beginner</div>
+    <div class="rank-track" id="rank-track"></div>
+  </div>
+
+  <div class="hc-layout">
+    <div class="hc-left">
+      <div class="hc-input" id="typed"><span class="caret"></span></div>
+      <div class="hive" id="hive"></div>
+      <div class="hc-controls">
+        <button class="btn ghost small" id="delete">Delete</button>
+        <button class="circle-btn" id="shuffle" aria-label="Shuffle letters" title="Shuffle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+        </button>
+        <button class="btn small" id="enter">Enter</button>
+      </div>
+    </div>
+
+    <div class="hc-right">
+      <div class="found-box">
+        <div class="found-head">
+          <span id="found-count">You have found 0 words</span>
+          <span id="score-label">0</span>
+        </div>
+        <div class="found-words" id="found-words"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <p style="text-align:center">Make as many words as you can from seven letters.</p>
+    <ul>
+      <li>Words must be at least <b>four letters</b> long.</li>
+      <li>Every word must include the <b style="color:#b89a00">centre letter</b>.</li>
+      <li>Letters can be reused as often as you like.</li>
+      <li>Four-letter words score 1 point. Longer words score one point per letter.</li>
+      <li>A <b>pangram</b> uses all seven letters and scores 7 bonus points.</li>
+      <li>Type on your keyboard or tap the hexagons.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-end" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 id="end-title">Queen Bee</h2>
+    <p id="end-msg"></p>
+    <hr>
+    <button class="btn ghost" data-close>Keep playing</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../data/dict-words.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ID  = "honeycomb";
+  var CFG = RT.puzzles.spellingBee;
+  var CENTER = CFG.center.toUpperCase();
+  var OUTER  = CFG.outer.map(function (c) { return c.toUpperCase(); });
+  var ALL    = [CENTER].concat(OUTER);
+  var LETTERSET = ALL.join("");
+
+  var ANSWERS  = CFG.words.map(function (w) { return w.toUpperCase(); });
+  var PANGRAMS = (CFG.pangrams || []).map(function (w) { return w.toUpperCase(); });
+
+  function scoreWord(w) {
+    var base = w.length === 4 ? 1 : w.length;
+    var isPan = new Set(w.split("")).size === 7 &&
+                w.split("").every(function (c) { return LETTERSET.indexOf(c) > -1; });
+    return base + (isPan ? 7 : 0);
+  }
+  function isPangram(w) {
+    return new Set(w.split("")).size === 7;
+  }
+
+  var MAX = ANSWERS.reduce(function (a, w) { return a + scoreWord(w); }, 0);
+
+  var RANKS = [
+    ["Beginner", 0], ["Good Start", 2], ["Moving Up", 5], ["Good", 8],
+    ["Solid", 15], ["Nice", 25], ["Great", 40], ["Amazing", 50],
+    ["Genius", 70], ["Queen Bee", 100]
+  ].map(function (r) { return { name: r[0], need: Math.round(MAX * r[1] / 100) }; });
+
+  var found = [];      // words found, in order
+  var typed = "";
+  var order = OUTER.slice();
+  var reachedQueen = false;
+
+  /* --------------------------------------------------------- rendering */
+  var HEX_POS = [            // [fraction of hex width, fraction of hex height]
+    [0, -1], [0.75, -0.5], [0.75, 0.5], [0, 1], [-0.75, 0.5], [-0.75, -0.5]
+  ];
+
+  function buildHive() {
+    var hive = document.getElementById("hive");
+    hive.innerHTML = "";
+
+    function hex(letter, isCenter, pos) {
+      var b = RT.el("button", "hex" + (isCenter ? " center" : ""), letter);
+      b.type = "button";
+      if (pos) {
+        /* x is a fraction of the hex's width, y a fraction of its height,
+           which is what translate() percentages are relative to. */
+        b.style.transform = "translate(" + (pos[0] * 100) + "%," +
+                            (pos[1] * 100) + "%) scale(.94)";
+      }
+      b.addEventListener("click", function () { press(letter); });
+      hive.appendChild(b);
+      return b;
+    }
+
+    hex(CENTER, true, null);
+    order.forEach(function (l, i) { hex(l, false, HEX_POS[i]); });
+  }
+
+  function renderTyped() {
+    var box = document.getElementById("typed");
+    box.innerHTML = "";
+    typed.split("").forEach(function (ch) {
+      var cls = ch === CENTER ? "center" : (LETTERSET.indexOf(ch) > -1 ? "" : "bad");
+      box.appendChild(RT.el("span", cls, ch));
+    });
+    box.appendChild(RT.el("span", "caret"));
+  }
+
+  function currentScore() {
+    return found.reduce(function (a, w) {
+      return a + (ANSWERS.indexOf(w) > -1 ? scoreWord(w) : 1);
+    }, 0);
+  }
+
+  function rankIndex(score) {
+    var idx = 0;
+    RANKS.forEach(function (r, i) { if (score >= r.need) idx = i; });
+    return idx;
+  }
+
+  function renderRank() {
+    var score = currentScore();
+    var idx = rankIndex(score);
+    document.getElementById("rank-name").textContent = RANKS[idx].name;
+    var track = document.getElementById("rank-track");
+    track.innerHTML = "";
+    RANKS.forEach(function (r, i) {
+      var d = RT.el("div", "rank-dot" + (i < idx ? " on" : "") + (i === idx ? " on cur" : ""));
+      if (i === idx) d.textContent = score;
+      d.title = r.name + " (" + r.need + ")";
+      track.appendChild(d);
+    });
+    document.getElementById("score-label").textContent = score + " / " + MAX;
+  }
+
+  function renderFound() {
+    var list = document.getElementById("found-words");
+    list.innerHTML = "";
+    var sorted = found.slice().sort();
+    sorted.forEach(function (w) {
+      var known = ANSWERS.indexOf(w) > -1;
+      var cls = known ? (isPangram(w) ? "pangram" : "") : "bonus";
+      var s = RT.el("span", cls, w.toLowerCase());
+      if (!known) s.title = "Bonus word, not on today's list";
+      list.appendChild(s);
+    });
+    document.getElementById("found-count").textContent =
+      "You have found " + found.length + (found.length === 1 ? " word" : " words");
+  }
+
+  function render() { renderTyped(); renderRank(); renderFound(); }
+
+  /* ---------------------------------------------------------- gameplay */
+  function press(ch) {
+    if (LETTERSET.indexOf(ch) === -1) { shake(); return; }
+    typed += ch;
+    renderTyped();
+  }
+
+  function shake() {
+    var box = document.getElementById("typed");
+    box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
+  }
+
+  function submit() {
+    var w = typed;
+    typed = "";
+    if (!w) return;
+
+    if (w.length < 4)                      { RT.toast("Too short"); shake(); renderTyped(); return; }
+    if (w.indexOf(CENTER) === -1)          { RT.toast("Missing centre letter"); shake(); renderTyped(); return; }
+    if (found.indexOf(w) > -1)             { RT.toast("Already found"); renderTyped(); return; }
+
+    var usesOnlyOurs = w.split("").every(function (c) { return LETTERSET.indexOf(c) > -1; });
+    if (!usesOnlyOurs)                     { RT.toast("Bad letters"); shake(); renderTyped(); return; }
+
+    var known = ANSWERS.indexOf(w) > -1;
+    var bonus = !known && window.DICT && window.DICT.has(w);
+    if (!known && !bonus)                  { RT.toast("Not in word list"); shake(); renderTyped(); return; }
+
+    var before = rankIndex(currentScore());
+    found.push(w);
+    var pts = known ? scoreWord(w) : 1;
+
+    if (known && isPangram(w)) { RT.toast("Pangram! +" + pts); RT.celebrate({ count: 70, duration: 2200 }); }
+    else if (bonus)            { RT.toast("Bonus word +1"); }
+    else                       { RT.toast("+" + pts); }
+
+    render();
+    save();
+
+    var after = rankIndex(currentScore());
+    if (after > before) {
+      setTimeout(function () { RT.toast(RANKS[after].name + "!", 1400); }, 700);
+    }
+    if (!reachedQueen && currentScore() >= MAX) {
+      reachedQueen = true;
+      finish();
+    }
+  }
+
+  function finish() {
+    RT.saveState(ID, { status: "won" });
+    RT.bumpStats(ID, true);
+    RT.celebrate({ count: 180, duration: 4200 });
+    setTimeout(function () {
+      document.getElementById("end-msg").textContent =
+        "You found every word on the list, all " + ANSWERS.length +
+        " of them. That is the whole hive.";
+      RT.modal("end").open();
+    }, 800);
+  }
+
+  /* ------------------------------------------------------- persistence */
+  function signature() { return CENTER + OUTER.slice().sort().join(""); }
+  function save() {
+    RT.saveState(ID, {
+      status: currentScore() >= MAX ? "won" : (found.length ? "progress" : "new"),
+      found: found, sig: signature()
+    });
+  }
+  function load() {
+    var st = RT.gameState(ID);
+    if (!st.found || st.sig !== signature()) { RT.resetState(ID); return; }
+    found = st.found;
+    reachedQueen = currentScore() >= MAX;
+  }
+
+  /* -------------------------------------------------------------- boot */
+  RT.ready(function () {
+    load();
+    buildHive();
+    render();
+
+    document.getElementById("enter").addEventListener("click", submit);
+    document.getElementById("delete").addEventListener("click", function () {
+      typed = typed.slice(0, -1); renderTyped();
+    });
+    document.getElementById("shuffle").addEventListener("click", function () {
+      order = RT.shuffle(order); buildHive();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (RT.$(".modal-backdrop.open")) return;
+      if (e.key === "Enter")          { e.preventDefault(); submit(); }
+      else if (e.key === "Backspace") { e.preventDefault(); typed = typed.slice(0, -1); renderTyped(); }
+      else if (e.key === " ")         { e.preventDefault(); order = RT.shuffle(order); buildHive(); }
+      else if (/^[a-zA-Z]$/.test(e.key)) { press(e.key.toUpperCase()); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

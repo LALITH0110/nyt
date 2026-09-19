@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Vault</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22/%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22/%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22/%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22/%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .vault-prompt{
+    font-family:var(--serif-text);font-size:16px;color:var(--gray);
+    text-align:center;max-width:420px;
+  }
+  .vault-board{display:flex;flex-direction:column;gap:6px;width:100%;max-width:430px}
+  .vault-row{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+  .vault-cell{
+    aspect-ratio:1;display:grid;place-items:center;
+    font-family:var(--sans);font-size:clamp(16px,5vw,26px);font-weight:700;
+    border:2px solid #d3d6da;background:#fff;color:var(--ink);
+    border-radius:4px;user-select:none;line-height:1;
+  }
+  .vault-cell.filled{border-color:#878a8c}
+  .vault-cell.reveal{animation:flip .55s ease forwards}
+  @keyframes flip{0%{transform:rotateX(0)}45%{transform:rotateX(90deg)}
+                  55%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+  .vault-cell[data-state="absent"]{background:var(--tile-absent);border-color:var(--tile-absent);color:#fff}
+  .vault-cell[data-state="present"]{background:var(--tile-present);border-color:var(--tile-present);color:#fff}
+  .vault-cell[data-state="correct"]{background:var(--tile-correct);border-color:var(--tile-correct);color:#fff}
+
+  .pad{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+    width:100%;max-width:360px;
+  }
+  .pad button{
+    appearance:none;border:none;border-radius:6px;cursor:pointer;
+    background:#d3d6da;color:var(--ink);
+    height:56px;font-family:var(--sans);font-size:20px;font-weight:700;
+    display:grid;place-items:center;
+  }
+  .pad button:hover{filter:brightness(.94)}
+  .pad button.wide{font-size:13px;letter-spacing:.04em}
+  .pad button[data-state="absent"]{background:var(--tile-absent);color:#fff}
+  .pad button[data-state="present"]{background:var(--tile-present);color:#fff}
+  .pad button[data-state="correct"]{background:var(--tile-correct);color:#fff}
+
+  .hintline{
+    font-family:var(--serif-text);font-style:italic;font-size:15px;
+    color:var(--gray);text-align:center;min-height:22px;max-width:420px;
+  }
+  .legend{
+    display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+    font-size:12px;color:var(--gray);
+  }
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px}
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">The Vault</h1>
+  <div class="gamebar-right">
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="iconbtn" id="hint-btn" aria-label="Hint" title="Hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.5.7.5 1.1h6c0-.4.1-.8.5-1.1A6 6 0 0 0 12 3z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage wide">
+  <p class="vault-prompt" id="prompt"></p>
+  <div class="hintline" id="hintline"></div>
+  <div class="vault-board" id="board" aria-label="Code attempts"></div>
+  <div class="legend">
+    <span><i style="background:var(--tile-correct)"></i>right digit, right place</span>
+    <span><i style="background:var(--tile-present)"></i>right digit, wrong place</span>
+    <span><i style="background:var(--tile-absent)"></i>not in the code</span>
+  </div>
+  <div class="pad" id="pad"></div>
+</main>
+
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <p style="text-align:center">Open the vault with an eight-digit code.</p>
+    <ul>
+      <li>Tap the keypad, or just type numbers.</li>
+      <li>After each attempt every digit changes colour.</li>
+      <li><b style="color:var(--tile-correct)">Green</b>: right digit, right place.</li>
+      <li><b style="color:var(--tile-present)">Gold</b>: that digit is in the code, but somewhere else.</li>
+      <li><b style="color:var(--tile-absent)">Grey</b>: that digit isn't in the code at all.</li>
+      <li>Six attempts. Tap the lightbulb if you want a nudge.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-end" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 id="end-title">Open</h2>
+    <p id="end-msg"></p>
+    <hr>
+    <button class="btn ghost" id="again">Try again</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ID   = "vault";
+  var CFG  = RT.puzzles.vault;
+  var CODE = String(CFG.code);
+  var LEN  = CODE.length;
+  var TRIES = CFG.tries || 6;
+
+  var guesses = [];
+  var current = "";
+  var over = false;
+  var hintsShown = 0;
+
+  var boardEl = document.getElementById("board");
+  var cells = [];
+  var padKeys = {};
+
+  /* ---------------------------------------------------------- build UI */
+  function buildBoard() {
+    boardEl.innerHTML = "";
+    cells = [];
+    for (var r = 0; r < TRIES; r++) {
+      var row = RT.el("div", "vault-row");
+      row.style.gridTemplateColumns = "repeat(" + LEN + ",1fr)";
+      var rowCells = [];
+      for (var c = 0; c < LEN; c++) {
+        var d = RT.el("div", "vault-cell");
+        row.appendChild(d);
+        rowCells.push(d);
+      }
+      cells.push(rowCells);
+      boardEl.appendChild(row);
+    }
+  }
+
+  function buildPad() {
+    var pad = document.getElementById("pad");
+    pad.innerHTML = "";
+    "1234567890".split("").forEach(function (n) {
+      var b = RT.el("button", null, n);
+      b.type = "button";
+      b.addEventListener("click", function () { b.blur(); onKey(n); });
+      padKeys[n] = b;
+      pad.appendChild(b);
+    });
+    var del = RT.el("button", "wide", "Delete");
+    del.type = "button";
+    del.addEventListener("click", function () { del.blur(); onKey("BACK"); });
+    pad.appendChild(del);
+    var ent = RT.el("button", "wide", "Enter");
+    ent.type = "button";
+    ent.style.gridColumn = "span 4";
+    ent.addEventListener("click", function () { ent.blur(); onKey("ENTER"); });
+    pad.appendChild(ent);
+  }
+
+  /* ------------------------------------------------------ scoring rule */
+  /* Same two-pass count as a word game, so repeated digits behave:
+     exact matches first, then leftovers get marked "present". */
+  function score(guess) {
+    var res = new Array(LEN).fill("absent");
+    var pool = {};
+    var i;
+    for (i = 0; i < LEN; i++) {
+      if (guess[i] === CODE[i]) res[i] = "correct";
+      else pool[CODE[i]] = (pool[CODE[i]] || 0) + 1;
+    }
+    for (i = 0; i < LEN; i++) {
+      if (res[i] === "correct") continue;
+      var ch = guess[i];
+      if (pool[ch] > 0) { res[i] = "present"; pool[ch]--; }
+    }
+    return res;
+  }
+
+  var RANK = { absent: 1, present: 2, correct: 3 };
+  function markPad(digit, state) {
+    var b = padKeys[digit];
+    if (!b) return;
+    var cur = b.getAttribute("data-state");
+    if (cur && RANK[cur] >= RANK[state]) return;
+    b.setAttribute("data-state", state);
+  }
+
+  /* --------------------------------------------------------- rendering */
+  function paintRow(r, guess, states, animate) {
+    guess.split("").forEach(function (ch, c) {
+      var cell = cells[r][c];
+      cell.textContent = ch;
+      cell.classList.add("filled");
+      if (animate) {
+        setTimeout(function () {
+          cell.classList.add("reveal");
+          setTimeout(function () {
+            cell.setAttribute("data-state", states[c]);
+            markPad(ch, states[c]);
+          }, 250);
+        }, c * 150);
+      } else {
+        cell.setAttribute("data-state", states[c]);
+        markPad(ch, states[c]);
+      }
+    });
+  }
+
+  function paintCurrent() {
+    var r = guesses.length;
+    if (r >= TRIES) return;
+    for (var c = 0; c < LEN; c++) {
+      var cell = cells[r][c];
+      var ch = current[c] || "";
+      cell.textContent = ch;
+      cell.classList.toggle("filled", !!ch);
+      if (ch) { cell.classList.remove("pop"); void cell.offsetWidth; cell.classList.add("pop"); }
+    }
+  }
+
+  function redraw() {
+    guesses.forEach(function (g, r) { paintRow(r, g, score(g), false); });
+    paintCurrent();
+  }
+
+  /* ---------------------------------------------------------- gameplay */
+  function shakeRow() {
+    var r = Math.min(guesses.length, TRIES - 1);
+    var row = boardEl.children[r];
+    row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake");
+  }
+
+  function submit() {
+    if (current.length < LEN) { RT.toast("Needs " + LEN + " digits"); shakeRow(); return; }
+    var guess = current;
+    var states = score(guess);
+    guesses.push(guess);
+    current = "";
+    paintRow(guesses.length - 1, guess, states, true);
+
+    var won = guess === CODE;
+    var done = won || guesses.length === TRIES;
+    var delay = LEN * 150 + 380;
+    save(done ? (won ? "won" : "lost") : "progress");
+    if (!done) return;
+
+    over = true;
+    setTimeout(function () {
+      if (won) {
+        cells[guesses.length - 1].forEach(function (cell, i) {
+          setTimeout(function () { cell.classList.add("bounce"); }, i * 70);
+        });
+        RT.celebrate({ count: 170, duration: 4200 });
+      }
+      RT.bumpStats(ID, won);
+      setTimeout(function () { showEnd(won); }, won ? 1000 : 300);
+    }, delay);
+  }
+
+  function onKey(k) {
+    if (over) return;
+    if (k === "ENTER") return submit();
+    if (k === "BACK") {
+      if (current.length) { current = current.slice(0, -1); paintCurrent(); save("progress"); }
+      return;
+    }
+    if (/^[0-9]$/.test(k) && current.length < LEN) {
+      current += k;
+      paintCurrent();
+      save("progress");
+    }
+  }
+
+  function showHint() {
+    var hints = CFG.hints || [];
+    if (!hints.length) { RT.toast("No hints today"); return; }
+    if (hintsShown >= hints.length) {
+      document.getElementById("hintline").textContent = hints[hints.length - 1];
+      RT.toast("That's every hint");
+      return;
+    }
+    document.getElementById("hintline").textContent = hints[hintsShown];
+    hintsShown++;
+    save(over ? (guesses[guesses.length - 1] === CODE ? "won" : "lost") : "progress");
+    RT.toast("Hint " + hintsShown + " of " + hints.length);
+  }
+
+  function showEnd(won) {
+    document.getElementById("end-title").textContent = won ? "It opens, you can access my heart now" : "Still locked";
+    document.getElementById("end-msg").textContent = won
+      ? (CFG.winMessage || "You remembered.")
+      : "The code was " + CODE + ". " + (CFG.winMessage || "");
+    RT.modal("end").open();
+  }
+
+  /* ------------------------------------------------------- persistence */
+  function save(status) {
+    RT.saveState(ID, { status: status, guesses: guesses, current: current,
+                       hintsShown: hintsShown, code: CODE });
+  }
+  function load() {
+    var st = RT.gameState(ID);
+    if (st.code && st.code !== CODE) { RT.resetState(ID); return; }
+    if (!st.guesses) return;
+    guesses = st.guesses.filter(function (g) { return g.length === LEN; });
+    current = (st.current || "").slice(0, LEN);
+    hintsShown = st.hintsShown || 0;
+    over = st.status === "won" || st.status === "lost";
+  }
+
+  /* -------------------------------------------------------------- boot */
+  RT.ready(function () {
+    document.getElementById("prompt").textContent =
+      CFG.prompt || "Eight digits. You know them by heart.";
+    buildBoard();
+    buildPad();
+    load();
+    redraw();
+    if (hintsShown > 0 && CFG.hints) {
+      document.getElementById("hintline").textContent = CFG.hints[hintsShown - 1];
+    }
+    if (over) setTimeout(function () { showEnd(RT.gameState(ID).status === "won"); }, 420);
+
+    document.getElementById("hint-btn").addEventListener("click", showHint);
+    document.getElementById("again").addEventListener("click", function () {
+      RT.resetState(ID);
+      guesses = []; current = ""; over = false; hintsShown = 0;
+      buildBoard(); buildPad();
+      document.getElementById("hintline").textContent = "";
+      RT.modal("end").close();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (RT.$(".modal-backdrop.open")) return;
+      if (e.key === "Enter") { e.preventDefault(); onKey("ENTER"); }
+      else if (e.key === "Backspace") { e.preventDefault(); onKey("BACK"); }
+      else if (/^[0-9]$/.test(e.key)) { onKey(e.key); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

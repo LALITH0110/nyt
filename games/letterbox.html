@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Letter Boxed</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .lb-typed{
+    min-height:38px;display:grid;place-items:center;
+    font-family:var(--sans);font-size:24px;font-weight:800;letter-spacing:.09em;
+    text-transform:uppercase;
+  }
+  .lb-typed .caret{
+    display:inline-block;width:2px;height:24px;background:var(--c-letterboxed);
+    vertical-align:-4px;animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+  .lb-board{width:min(390px,88vw);aspect-ratio:1}
+  .lb-board svg{width:100%;height:100%;display:block;touch-action:manipulation}
+  .lb-dot{cursor:pointer}
+  .lb-dot circle{transition:fill .15s ease}
+  .lb-dot text{
+    font-family:var(--sans);font-size:23px;font-weight:800;
+    text-anchor:middle;dominant-baseline:central;pointer-events:none;
+    text-transform:uppercase;
+  }
+  .lb-stats{
+    display:flex;gap:18px;justify-content:center;font-size:13px;color:var(--gray);
+  }
+  .lb-stats b{color:var(--ink)}
+  .lb-chain{
+    display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+    font-family:var(--sans);font-size:13px;font-weight:700;letter-spacing:.05em;
+  }
+  .lb-chain span{
+    padding:5px 11px;border-radius:999px;background:#fdeee1;border:1px solid #f0c9a6;
+  }
+  .lb-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">Letter Boxed</h1>
+  <div class="gamebar-right">
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage">
+  <div class="lb-stats">
+    <span>Words: <b id="wordcount">0</b></span>
+    <span>Letters left: <b id="lettersleft">12</b></span>
+    <span>Target: <b id="target">2 words</b></span>
+  </div>
+
+  <div class="lb-typed" id="typed"><span class="caret"></span></div>
+  <div class="lb-board"><svg id="board" viewBox="0 0 400 400" role="img" aria-label="Letter box"></svg></div>
+
+  <div class="lb-chain" id="chain"></div>
+
+  <div class="lb-controls">
+    <button class="btn ghost small" id="delete">Delete</button>
+    <button class="btn ghost small" id="restart">Restart</button>
+    <button class="btn small" id="enter">Enter</button>
+  </div>
+  <button class="btn ghost small" id="reveal" style="opacity:.7">Show me one answer</button>
+</main>
+
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <p style="text-align:center">Use all twelve letters in as few words as you can.</p>
+    <ul>
+      <li>Make a word by clicking letters, or just type.</li>
+      <li>Two letters in a row may never come from the <b>same side</b> of the square.</li>
+      <li>Each new word must <b>start with the letter the last word ended on</b>.</li>
+      <li>Letters can be used more than once.</li>
+      <li>You win when every one of the twelve letters has been used at least once.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-end" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2>All twelve</h2>
+    <p id="end-msg"></p>
+    <hr>
+    <button class="btn ghost" id="replay">Play again</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../data/dict-words.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ID  = "letterbox";
+  var CFG = RT.puzzles.letterBoxed;
+  var SIDES = CFG.sides.map(function (s) {
+    return s.map(function (c) { return c.toUpperCase(); });
+  });
+
+  var sideOf = {};      // letter -> side index
+  SIDES.forEach(function (s, i) { s.forEach(function (ch) { sideOf[ch] = i; }); });
+  var ALL = SIDES.reduce(function (a, s) { return a.concat(s); }, []);
+
+  var chain = [];       // words played
+  var typed = "";
+  var over  = false;
+
+  /* Geometry: a 400x400 board, letters spaced along each edge. */
+  var M = 62, S = 400 - M * 2;                 // margin, side length
+  var T = [M + S * 0.25, M + S * 0.5, M + S * 0.75];
+  function pos(side, i) {
+    if (side === 0) return { x: T[i], y: M };            // top
+    if (side === 1) return { x: 400 - M, y: T[i] };      // right
+    if (side === 2) return { x: T[2 - i], y: 400 - M };  // bottom
+    return { x: M, y: T[2 - i] };                        // left
+  }
+  var POS = {};
+  SIDES.forEach(function (s, si) { s.forEach(function (ch, i) { POS[ch] = pos(si, i); }); });
+
+  var svg = document.getElementById("board");
+  var NS = "http://www.w3.org/2000/svg";
+  function mk(tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+
+  function usedLetters() {
+    var set = {};
+    chain.concat(typed ? [typed] : []).forEach(function (w) {
+      w.split("").forEach(function (ch) { set[ch] = true; });
+    });
+    return set;
+  }
+
+  /* --------------------------------------------------------- rendering */
+  function draw() {
+    svg.innerHTML = "";
+    var used = usedLetters();
+
+    svg.appendChild(mk("rect", {
+      x: M, y: M, width: S, height: S,
+      fill: "none", stroke: "#121212", "stroke-width": 2
+    }));
+
+    /* lines for words already played */
+    chain.forEach(function (w) {
+      svg.appendChild(mk("path", {
+        d: pathFor(w), fill: "none", stroke: "#e8c4a0",
+        "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round"
+      }));
+    });
+    /* line for the word being typed */
+    if (typed.length > 1) {
+      svg.appendChild(mk("path", {
+        d: pathFor(typed), fill: "none", stroke: "#e07b39",
+        "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round"
+      }));
+    }
+
+    ALL.forEach(function (ch) {
+      var p = POS[ch];
+      var g = mk("g", { class: "lb-dot" });
+      var isTypedLast = typed && typed[typed.length - 1] === ch;
+      g.appendChild(mk("circle", {
+        cx: p.x, cy: p.y, r: 19,
+        fill: isTypedLast ? "#e07b39" : (used[ch] ? "#121212" : "#ffffff"),
+        stroke: "#121212", "stroke-width": 2
+      }));
+      var t = mk("text", {
+        x: p.x, y: p.y + 1,
+        fill: (isTypedLast || used[ch]) ? "#ffffff" : "#121212"
+      });
+      t.textContent = ch;
+      g.appendChild(t);
+      g.addEventListener("click", function () { press(ch); });
+      svg.appendChild(g);
+    });
+  }
+
+  function pathFor(w) {
+    return w.split("").map(function (ch, i) {
+      var p = POS[ch];
+      if (!p) return "";
+      return (i ? "L" : "M") + p.x + " " + p.y;
+    }).join(" ");
+  }
+
+  function renderTyped() {
+    var box = document.getElementById("typed");
+    box.textContent = typed;
+    box.appendChild(RT.el("span", "caret"));
+  }
+
+  function render() {
+    draw();
+    renderTyped();
+    var used = Object.keys(usedLetters()).filter(function (c) { return ALL.indexOf(c) > -1; });
+    document.getElementById("wordcount").textContent = chain.length;
+    document.getElementById("lettersleft").textContent = ALL.length - used.length;
+    document.getElementById("target").textContent =
+      (CFG.maxWords || 2) + " word" + ((CFG.maxWords || 2) === 1 ? "" : "s");
+
+    var c = document.getElementById("chain");
+    c.innerHTML = "";
+    chain.forEach(function (w) { c.appendChild(RT.el("span", null, w)); });
+  }
+
+  /* ---------------------------------------------------------- gameplay */
+  function shake() {
+    var box = document.getElementById("typed");
+    box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
+  }
+
+  function press(ch) {
+    if (over) return;
+    if (ALL.indexOf(ch) === -1) { RT.toast("That letter isn't on the board"); shake(); return; }
+    if (typed.length && sideOf[typed[typed.length - 1]] === sideOf[ch]) {
+      RT.toast("Not twice from the same side");
+      shake();
+      return;
+    }
+    if (!typed.length && chain.length) {
+      var need = chain[chain.length - 1].slice(-1);
+      if (ch !== need) {
+        RT.toast("Next word must start with " + need);
+        shake();
+        return;
+      }
+    }
+    typed += ch;
+    render();
+  }
+
+  function submit() {
+    if (over) return;
+    var w = typed;
+    if (w.length < 3) { RT.toast("Words must be at least three letters"); shake(); return; }
+    if (!(window.DICT && window.DICT.has(w))) { RT.toast("Not in word list"); shake(); return; }
+
+    chain.push(w);
+    typed = "";
+    render();
+    save();
+
+    var used = Object.keys(usedLetters()).filter(function (c) { return ALL.indexOf(c) > -1; });
+    if (used.length === ALL.length) finish();
+    else RT.toast(w + ", " + (ALL.length - used.length) + " letters to go");
+  }
+
+  function finish() {
+    over = true;
+    RT.saveState(ID, { status: "won", chain: chain, sig: signature() });
+    RT.bumpStats(ID, true);
+    RT.celebrate();
+    setTimeout(function () {
+      var target = CFG.maxWords || 2;
+      document.getElementById("end-msg").textContent =
+        "Every letter used in " + chain.length + " word" + (chain.length === 1 ? "" : "s") +
+        (chain.length <= target ? ". That matches the target exactly." :
+         ". The target was " + target + ", but a win is a win.");
+      RT.modal("end").open();
+    }, 600);
+  }
+
+  /* ------------------------------------------------------- persistence */
+  function signature() { return SIDES.map(function (s) { return s.join(""); }).join("|"); }
+  function save() {
+    RT.saveState(ID, {
+      status: over ? "won" : (chain.length ? "progress" : "new"),
+      chain: chain, sig: signature()
+    });
+  }
+  function load() {
+    var st = RT.gameState(ID);
+    if (!st.chain || st.sig !== signature()) { RT.resetState(ID); return; }
+    chain = st.chain;
+    over  = st.status === "won";
+  }
+
+  /* -------------------------------------------------------------- boot */
+  RT.ready(function () {
+    load();
+    render();
+
+    document.getElementById("enter").addEventListener("click", submit);
+    document.getElementById("delete").addEventListener("click", function () {
+      typed = typed.slice(0, -1); render();
+    });
+    document.getElementById("restart").addEventListener("click", function () {
+      if (!confirm("Clear the chain and start again?")) return;
+      chain = []; typed = ""; over = false;
+      render(); save();
+    });
+    document.getElementById("reveal").addEventListener("click", function () {
+      var sol = (CFG.solution || []).join(" → ");
+      RT.toast(sol ? "One answer: " + sol : "No answer recorded", 4200);
+    });
+    document.getElementById("replay").addEventListener("click", function () {
+      RT.resetState(ID);
+      chain = []; typed = ""; over = false;
+      render();
+      RT.modal("end").close();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (RT.$(".modal-backdrop.open")) return;
+      if (e.key === "Enter")          { e.preventDefault(); submit(); }
+      else if (e.key === "Backspace") { e.preventDefault(); typed = typed.slice(0, -1); render(); }
+      else if (/^[a-zA-Z]$/.test(e.key)) { press(e.key.toUpperCase()); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

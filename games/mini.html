@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Mini</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .xw-layout{display:flex;gap:28px;align-items:flex-start;justify-content:center;width:100%}
+  .mini-intro{font-family:var(--serif-text);font-size:16px;color:var(--gray);text-align:center;margin:2px 0 6px}
+  .xw-main{flex:0 0 auto;display:flex;flex-direction:column;gap:12px;align-items:center}
+  .xw-clues{flex:1;max-width:280px;display:flex;flex-direction:column;gap:18px}
+
+  .clue-bar{
+    display:flex;align-items:center;gap:10px;width:360px;max-width:100%;
+    background:#e6edfb;border-radius:4px;padding:11px 12px;min-height:52px;
+  }
+  .clue-bar .arrow{
+    background:none;border:none;cursor:pointer;color:var(--ink);
+    padding:2px 4px;display:grid;place-items:center;
+  }
+  .clue-bar .text{
+    flex:1;font-family:var(--serif-text);font-size:15px;line-height:1.3;
+  }
+  .clue-bar .text b{font-family:var(--sans);font-size:13px;margin-right:6px}
+
+  .xw-grid{
+    display:grid;width:360px;max-width:92vw;
+    border:2px solid var(--ink);background:var(--ink);gap:1px;
+  }
+  .sq{
+    position:relative;aspect-ratio:1;background:#fff;
+    display:grid;place-items:center;cursor:pointer;
+    font-family:var(--sans);font-size:28px;font-weight:600;text-transform:uppercase;
+    user-select:none;
+  }
+  .sq.block{background:var(--ink);cursor:default}
+  .sq.hl{background:#cfe0fb}
+  .sq.cur{background:#ffda00}
+  .sq .num{
+    position:absolute;top:1px;left:3px;
+    font-size:10px;font-weight:700;line-height:1;color:var(--ink);
+  }
+  .sq .val{line-height:1;margin-top:4px}
+  .sq.wrong .val{color:#c33}
+  .sq.revealed .val{color:#1a6ec4}
+  .sq::after{
+    content:"";position:absolute;top:2px;right:2px;
+    width:0;height:0;border-top:9px solid transparent;border-right:9px solid #c33;
+    opacity:0;
+  }
+  .sq.marked-wrong::after{opacity:1}
+
+  .clue-col h3{
+    font-family:var(--sans);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    border-bottom:2px solid var(--ink);padding-bottom:5px;margin:0 0 6px;
+  }
+  .clue-col ol{list-style:none;margin:0;padding:0}
+  .clue-col li{
+    display:flex;gap:8px;padding:5px 6px;cursor:pointer;border-radius:3px;
+    font-family:var(--serif-text);font-size:14px;line-height:1.3;
+  }
+  .clue-col li:hover{background:var(--paper-tint)}
+  .clue-col li.active{background:#cfe0fb}
+  .clue-col li b{font-family:var(--sans);font-size:12px;min-width:16px}
+  .clue-col li.done{color:var(--gray-light)}
+
+  /* pinned to the grid width so it wraps instead of stretching the column */
+  .xw-keyboard{width:360px;max-width:100%}
+  .xw-keyboard .key{height:42px}
+  .xw-keyboard .key:not(.wide):not(.spacer){font-size:14px}
+  .xw-keyboard .kb-row{margin-bottom:5px;gap:5px}
+  .xw-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    width:360px;max-width:100%}
+  @media (max-width:760px){
+    .xw-layout{flex-direction:column;align-items:center}
+    .xw-main{width:100%;max-width:360px}
+    .clue-bar,.xw-grid,.xw-keyboard,.xw-tools{width:100%;max-width:100%}
+    .xw-clues{max-width:340px;width:100%;flex-direction:row;gap:14px}
+    .clue-col{flex:1}
+  }
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">The Mini</h1>
+  <div class="gamebar-right">
+    <span id="timer" style="font-size:14px;font-weight:700;color:var(--gray);min-width:44px;text-align:right"></span>
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage wide">
+  <p class="mini-intro">Lets see if you can solve this</p>
+  <div class="xw-layout">
+    <div class="xw-main">
+      <div class="clue-bar">
+        <button class="arrow" id="prev-clue" aria-label="Previous clue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="text" id="clue-text"></div>
+        <button class="arrow" id="next-clue" aria-label="Next clue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <div class="xw-grid" id="grid"></div>
+      <div class="xw-keyboard" id="keyboard" aria-label="Crossword keyboard"></div>
+
+      <div class="xw-tools">
+        <button class="btn ghost small" id="check-sq">Check square</button>
+        <button class="btn ghost small" id="check-all">Check puzzle</button>
+        <button class="btn ghost small" id="reveal-sq">Reveal square</button>
+        <button class="btn ghost small" id="reveal-all">Reveal puzzle</button>
+        <button class="btn ghost small" id="clear-all">Clear</button>
+      </div>
+    </div>
+
+    <div class="xw-clues">
+      <div class="clue-col"><h3>Across</h3><ol id="list-across"></ol></div>
+      <div class="clue-col"><h3>Down</h3><ol id="list-down"></ol></div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <ul>
+      <li>Click a square and start typing.</li>
+      <li>Click the same square again to switch between Across and Down.</li>
+      <li>Arrow keys move around; Tab jumps to the next clue.</li>
+      <li>Every white square belongs to an Across and a Down answer.</li>
+      <li>Stuck? The buttons underneath will check or reveal.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-end" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2>Solved</h2>
+    <p id="end-msg"></p>
+    <hr>
+    <button class="btn ghost" id="replay">Clear and play again</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ID  = "mini";
+  var CFG = RT.puzzles.mini;
+  var SOL = CFG.grid.map(function (row) { return row.toUpperCase().split(""); });
+  var ROWS = SOL.length, COLS = SOL[0].length;
+
+  function isBlock(r, c) { return SOL[r][c] === "#"; }
+
+  /* ------------------------------------------------- numbering & words */
+  /* Work out clue numbers exactly the way a crossword does: a square gets a
+     number if it begins an across word or a down word. */
+  var numbers = {};          // "r,c" -> number
+  var words   = { across: [], down: [] };
+
+  (function buildWords() {
+    var n = 0;
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (isBlock(r, c)) continue;
+        var startAcross = (c === 0 || isBlock(r, c - 1)) &&
+                          (c + 1 < COLS && !isBlock(r, c + 1));
+        var startDown   = (r === 0 || isBlock(r - 1, c)) &&
+                          (r + 1 < ROWS && !isBlock(r + 1, c));
+        if (!startAcross && !startDown) continue;
+        n++;
+        numbers[r + "," + c] = n;
+        if (startAcross) {
+          var cellsA = [];
+          for (var cc = c; cc < COLS && !isBlock(r, cc); cc++) cellsA.push([r, cc]);
+          words.across.push({ num: n, cells: cellsA });
+        }
+        if (startDown) {
+          var cellsD = [];
+          for (var rr = r; rr < ROWS && !isBlock(rr, c); rr++) cellsD.push([rr, c]);
+          words.down.push({ num: n, cells: cellsD });
+        }
+      }
+    }
+  })();
+
+  function clueTextFor(dir, num) {
+    var list = dir === "across" ? (CFG.across || []) : (CFG.down || []);
+    var hit = list.filter(function (x) { return x.num === num; })[0];
+    return hit ? hit.clue : "(no clue set)";
+  }
+
+  /* ----------------------------------------------------------- state */
+  var entries = {};          // "r,c" -> letter typed
+  var marks   = {};          // "r,c" -> "wrong" | "revealed"
+  var cur     = null;        // [r,c]
+  var dir     = "across";
+  var solved  = false;
+  var started = null, elapsed = 0, ticker = null;
+
+  var gridEl = document.getElementById("grid");
+  var squares = {};
+
+  function K(r, c) { return r + "," + c; }
+
+  function firstOpen() {
+    for (var r = 0; r < ROWS; r++)
+      for (var c = 0; c < COLS; c++)
+        if (!isBlock(r, c)) return [r, c];
+    return null;
+  }
+
+  function wordAt(r, c, d) {
+    var list = words[d];
+    for (var i = 0; i < list.length; i++) {
+      var w = list[i];
+      for (var j = 0; j < w.cells.length; j++) {
+        if (w.cells[j][0] === r && w.cells[j][1] === c) return w;
+      }
+    }
+    return null;
+  }
+
+  /* -------------------------------------------------------- rendering */
+  function build() {
+    gridEl.style.gridTemplateColumns = "repeat(" + COLS + ",1fr)";
+    gridEl.innerHTML = "";
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var sq = RT.el("div", "sq" + (isBlock(r, c) ? " block" : ""));
+        sq.dataset.r = r; sq.dataset.c = c;
+        if (!isBlock(r, c)) {
+          if (numbers[K(r, c)]) sq.appendChild(RT.el("span", "num", numbers[K(r, c)]));
+          sq.appendChild(RT.el("span", "val", ""));
+          (function (r, c) {
+            sq.addEventListener("click", function () { select(r, c, true); });
+          })(r, c);
+        }
+        gridEl.appendChild(sq);
+        squares[K(r, c)] = sq;
+      }
+    }
+  }
+
+  function paint() {
+    var word = cur ? wordAt(cur[0], cur[1], dir) : null;
+    var inWord = {};
+    if (word) word.cells.forEach(function (p) { inWord[K(p[0], p[1])] = true; });
+
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (isBlock(r, c)) continue;
+        var sq = squares[K(r, c)];
+        sq.classList.toggle("hl", !!inWord[K(r, c)]);
+        sq.classList.toggle("cur", !!cur && cur[0] === r && cur[1] === c);
+        sq.classList.toggle("marked-wrong", marks[K(r, c)] === "wrong");
+        sq.classList.toggle("revealed", marks[K(r, c)] === "revealed");
+        sq.querySelector(".val").textContent = entries[K(r, c)] || "";
+      }
+    }
+
+    if (word) {
+      var clueBar = document.getElementById("clue-text");
+      clueBar.textContent = "";
+      clueBar.appendChild(RT.el("b", null, word.num + (dir === "across" ? "A" : "D")));
+      clueBar.appendChild(document.createTextNode(clueTextFor(dir, word.num)));
+    }
+    paintLists(word);
+  }
+
+  function wordFilled(w) {
+    return w.cells.every(function (p) { return !!entries[K(p[0], p[1])]; });
+  }
+
+  function paintLists(activeWord) {
+    ["across", "down"].forEach(function (d) {
+      var ol = document.getElementById("list-" + d);
+      ol.innerHTML = "";
+      words[d].forEach(function (w) {
+        var li = RT.el("li");
+        li.appendChild(RT.el("b", null, String(w.num)));
+        li.appendChild(RT.el("span", null, clueTextFor(d, w.num)));
+        if (wordFilled(w)) li.classList.add("done");
+        if (activeWord && d === dir && w.num === activeWord.num) li.classList.add("active");
+        li.addEventListener("click", function () {
+          dir = d;
+          select(w.cells[0][0], w.cells[0][1], false);
+        });
+        ol.appendChild(li);
+      });
+    });
+  }
+
+  /* --------------------------------------------------------- movement */
+  function select(r, c, toggle) {
+    if (isBlock(r, c)) return;
+    if (toggle && cur && cur[0] === r && cur[1] === c) {
+      var other = dir === "across" ? "down" : "across";
+      if (wordAt(r, c, other)) dir = other;
+    } else if (!wordAt(r, c, dir)) {
+      dir = dir === "across" ? "down" : "across";
+    }
+    cur = [r, c];
+    paint();
+  }
+
+  function step(delta) {
+    if (!cur) return;
+    var w = wordAt(cur[0], cur[1], dir);
+    if (!w) return;
+    var i = w.cells.findIndex(function (p) { return p[0] === cur[0] && p[1] === cur[1]; });
+    var j = i + delta;
+    if (j >= 0 && j < w.cells.length) { cur = w.cells[j].slice(); paint(); }
+  }
+
+  function advanceSmart() {
+    /* Move to the next empty square in this word; if the word is full,
+       jump to the next word with a gap. */
+    var w = wordAt(cur[0], cur[1], dir);
+    if (!w) return;
+    var i = w.cells.findIndex(function (p) { return p[0] === cur[0] && p[1] === cur[1]; });
+    for (var j = i + 1; j < w.cells.length; j++) {
+      if (!entries[K(w.cells[j][0], w.cells[j][1])]) {
+        cur = w.cells[j].slice(); paint(); return;
+      }
+    }
+    if (i + 1 < w.cells.length) { cur = w.cells[i + 1].slice(); paint(); return; }
+    nextClue(1, true);
+  }
+
+  function nextClue(delta, preferEmpty) {
+    var list = words[dir];
+    var w = wordAt(cur[0], cur[1], dir);
+    var i = list.findIndex(function (x) { return x.num === w.num; });
+    for (var n = 1; n <= list.length; n++) {
+      var j = ((i + delta * n) % list.length + list.length) % list.length;
+      var cand = list[j];
+      if (!preferEmpty || !wordFilled(cand)) {
+        var target = cand.cells.filter(function (p) { return !entries[K(p[0], p[1])]; })[0]
+                   || cand.cells[0];
+        cur = target.slice();
+        paint();
+        return;
+      }
+    }
+    /* everything in this direction is full, hop to the other direction */
+    dir = dir === "across" ? "down" : "across";
+    cur = words[dir][0].cells[0].slice();
+    paint();
+  }
+
+  function moveArrow(dr, dc) {
+    if (!cur) return;
+    var wanted = dr !== 0 ? "down" : "across";
+    if (dir !== wanted && wordAt(cur[0], cur[1], wanted)) { dir = wanted; paint(); return; }
+    var r = cur[0] + dr, c = cur[1] + dc;
+    while (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
+      if (!isBlock(r, c)) { cur = [r, c]; paint(); return; }
+      r += dr; c += dc;
+    }
+  }
+
+  /* ---------------------------------------------------------- typing */
+  function type(ch) {
+    if (!cur || solved) return;
+    entries[K(cur[0], cur[1])] = ch;
+    delete marks[K(cur[0], cur[1])];
+    startTimer();
+    advanceSmart();
+    save();
+    checkSolved();
+  }
+
+  function backspace() {
+    if (!cur || solved) return;
+    var k = K(cur[0], cur[1]);
+    if (entries[k]) { delete entries[k]; delete marks[k]; }
+    else { step(-1); if (cur) { delete entries[K(cur[0], cur[1])]; } }
+    paint(); save();
+  }
+
+  /* ------------------------------------------------- check and reveal */
+  function eachOpen(fn) {
+    for (var r = 0; r < ROWS; r++)
+      for (var c = 0; c < COLS; c++)
+        if (!isBlock(r, c)) fn(r, c);
+  }
+
+  function checkCells(cells) {
+    cells.forEach(function (p) {
+      var k = K(p[0], p[1]);
+      if (!entries[k]) return;
+      if (entries[k] !== SOL[p[0]][p[1]]) marks[k] = "wrong";
+      else delete marks[k];
+    });
+    paint(); save();
+  }
+
+  function revealCells(cells) {
+    cells.forEach(function (p) {
+      var k = K(p[0], p[1]);
+      if (entries[k] !== SOL[p[0]][p[1]]) {
+        entries[k] = SOL[p[0]][p[1]];
+        marks[k] = "revealed";
+      }
+    });
+    paint(); save(); checkSolved();
+  }
+
+  function allOpenCells() {
+    var out = [];
+    eachOpen(function (r, c) { out.push([r, c]); });
+    return out;
+  }
+
+  function checkSolved() {
+    var done = true;
+    eachOpen(function (r, c) {
+      if (entries[K(r, c)] !== SOL[r][c]) done = false;
+    });
+    if (!done || solved) return;
+    solved = true;
+    stopTimer();
+    RT.saveState(ID, { status: "won" });
+    RT.bumpStats(ID, true);
+    RT.celebrate();
+    setTimeout(function () {
+      var revealed = Object.keys(marks).filter(function (k) { return marks[k] === "revealed"; }).length;
+      document.getElementById("end-msg").textContent =
+        "Finished in " + fmt(elapsed) +
+        (revealed ? " with " + revealed + " square" + (revealed === 1 ? "" : "s") + " revealed." : ", all your own work.");
+      RT.modal("end").open();
+    }, 600);
+  }
+
+  /* ----------------------------------------------------------- timer */
+  function fmt(s) {
+    var m = Math.floor(s / 60), x = s % 60;
+    return m + ":" + (x < 10 ? "0" : "") + x;
+  }
+  function startTimer() {
+    if (ticker || solved) return;
+    ticker = setInterval(function () {
+      elapsed++;
+      document.getElementById("timer").textContent = fmt(elapsed);
+      if (elapsed % 5 === 0) save();
+    }, 1000);
+  }
+  function stopTimer() { clearInterval(ticker); ticker = null; }
+
+  /* ------------------------------------------------------ persistence */
+  function signature() { return CFG.grid.join("|"); }
+  function save() {
+    RT.saveState(ID, {
+      status: solved ? "won" : (Object.keys(entries).length ? "progress" : "new"),
+      entries: entries, marks: marks, elapsed: elapsed, sig: signature()
+    });
+  }
+  function load() {
+    var st = RT.gameState(ID);
+    if (!st.entries || st.sig !== signature()) { RT.resetState(ID); return; }
+    entries = st.entries || {};
+    marks   = st.marks || {};
+    elapsed = st.elapsed || 0;
+    solved  = st.status === "won";
+  }
+
+  /* ------------------------------------------------------------- boot */
+  RT.ready(function () {
+    build();
+    RT.keyboard("#keyboard", { bindPhysical: false, onKey: function (key) {
+      if (key === "BACK") backspace();
+      else if (key === "ENTER") nextClue(1, false);
+      else type(key);
+    }});
+    load();
+    cur = firstOpen();
+    document.getElementById("timer").textContent = fmt(elapsed);
+    paint();
+    if (!solved && Object.keys(entries).length) startTimer();
+
+    document.addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (RT.$(".modal-backdrop.open")) return;
+      var k = e.key;
+      if (/^[a-zA-Z]$/.test(k))      { e.preventDefault(); type(k.toUpperCase()); }
+      else if (k === "Backspace")    { e.preventDefault(); backspace(); }
+      else if (k === "ArrowLeft")    { e.preventDefault(); moveArrow(0, -1); }
+      else if (k === "ArrowRight")   { e.preventDefault(); moveArrow(0, 1); }
+      else if (k === "ArrowUp")      { e.preventDefault(); moveArrow(-1, 0); }
+      else if (k === "ArrowDown")    { e.preventDefault(); moveArrow(1, 0); }
+      else if (k === "Tab")          { e.preventDefault(); nextClue(e.shiftKey ? -1 : 1, false); }
+      else if (k === " ")            { e.preventDefault(); select(cur[0], cur[1], true); }
+    });
+
+    document.getElementById("prev-clue").addEventListener("click", function () { nextClue(-1, false); });
+    document.getElementById("next-clue").addEventListener("click", function () { nextClue(1, false); });
+    document.getElementById("check-sq").addEventListener("click", function () { checkCells([cur]); });
+    document.getElementById("check-all").addEventListener("click", function () {
+      checkCells(allOpenCells());
+      var bad = Object.keys(marks).filter(function (k) { return marks[k] === "wrong"; }).length;
+      RT.toast(bad ? bad + " square" + (bad === 1 ? "" : "s") + " wrong" : "No mistakes so far");
+    });
+    document.getElementById("reveal-sq").addEventListener("click", function () { revealCells([cur]); });
+    document.getElementById("reveal-all").addEventListener("click", function () {
+      if (confirm("Reveal the whole grid?")) revealCells(allOpenCells());
+    });
+    document.getElementById("clear-all").addEventListener("click", function () {
+      if (!confirm("Clear everything you've typed?")) return;
+      entries = {}; marks = {}; solved = false; elapsed = 0;
+      stopTimer();
+      document.getElementById("timer").textContent = fmt(0);
+      paint(); save();
+    });
+    document.getElementById("replay").addEventListener("click", function () {
+      RT.resetState(ID);
+      entries = {}; marks = {}; solved = false; elapsed = 0;
+      stopTimer();
+      document.getElementById("timer").textContent = fmt(0);
+      cur = firstOpen();
+      paint();
+      RT.modal("end").close();
+    });
+  });
+})();
+</script>
+</body>
+</html>

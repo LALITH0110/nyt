@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Games | The Reb Times</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<meta name="description" content="Ten original word and logic games, made for one very special person.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  .edition-nav{display:flex;align-items:center;justify-content:center;gap:32px;border-bottom:1px solid var(--rule);min-height:48px}
+  .edition-nav a{font-size:13px;font-weight:700;color:var(--ink);text-decoration:none;padding:14px 0 12px;border-bottom:2px solid transparent}
+  .edition-nav a:first-child{border-color:var(--ink)}
+  .edition-nav a:hover{border-color:var(--ink)}
+  .hero{text-align:center;padding:52px 0 32px}
+  .hero-kicker{font-size:12px;font-weight:700;letter-spacing:.13em;margin:0 0 12px;color:var(--gray)}
+  .hero h1{font-family:var(--serif);font-size:clamp(37px,6vw,60px);font-weight:900;margin:0;line-height:1.04;letter-spacing:-.025em}
+  .hero .lede{font-size:17px;margin-top:18px;max-width:590px}
+  .feature{display:grid;grid-template-columns:1fr 1fr;min-height:330px;border:1px solid var(--rule);background:#f8f7f4;text-decoration:none;color:var(--ink);overflow:hidden}
+  .feature-copy{padding:42px 46px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+  .feature-label{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--gray);margin:0 0 18px}
+  .feature h2{font:900 clamp(35px,5vw,55px)/1 var(--serif);letter-spacing:-.02em;margin:0 0 14px}
+  .feature p:not(.feature-label){font-family:var(--serif-text);font-size:18px;line-height:1.45;max-width:350px;margin:0 0 24px}
+  .feature-cta{display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;border-radius:999px;padding:12px 28px;font-size:14px;font-weight:700;min-width:122px}
+  .feature:hover .feature-cta{background:#393939}
+  .feature-art{display:flex;justify-content:center;align-items:center;background:#e5ede3;padding:28px}
+  .wordle-preview{display:grid;grid-template-columns:repeat(5,54px);gap:7px;transform:rotate(-5deg);filter:drop-shadow(0 13px 18px rgba(0,0,0,.09))}
+  .preview-tile{width:54px;height:54px;display:grid;place-items:center;background:#fff;border:2px solid #d3d6da;font-size:31px;font-weight:700;line-height:1}
+  .preview-tile.green{background:#6aaa64;color:#fff;border-color:#6aaa64}
+  .preview-tile.gold{background:#c9b458;color:#fff;border-color:#c9b458}
+  .preview-tile.gray{background:#787c7e;color:#fff;border-color:#787c7e}
+  .progress-strip{display:flex;align-items:center;justify-content:center;gap:0;margin:22px auto 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);max-width:690px}
+  .progress-cell{flex:1;text-align:center;padding:15px 12px}
+  .progress-cell + .progress-cell{border-left:1px solid var(--rule)}
+  .progress-cell b{display:inline;font-family:var(--serif-text);font-size:22px;font-weight:400;line-height:1}
+  .progress-cell span{font-size:12px;color:var(--gray);margin-left:8px}
+  .section-rule{margin-top:46px}
+  .section-rule h2{font-size:24px}
+  .reset-row{text-align:center;margin-top:30px}
+  .birthday-modal{width:min(420px,100%);border-top:4px solid var(--ink)}
+  .birthday-modal .birthday-label{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--gray);margin-bottom:12px}
+  .birthday-modal h2{font-size:clamp(24px,5vw,30px);line-height:1.16;margin-bottom:14px}
+  .birthday-modal .btn{margin-top:10px}
+  @media(max-width:700px){
+    .hero{padding:36px 0 26px}
+    .feature{grid-template-columns:1fr}
+    .feature-copy{padding:32px 28px;order:2}
+    .feature-art{min-height:215px;order:1}
+    .wordle-preview{grid-template-columns:repeat(5,39px);gap:5px}
+    .preview-tile{width:39px;height:39px;font-size:24px}
+  }
+  @media(max-width:460px){.edition-nav{gap:22px}.progress-cell{padding:12px 4px}.progress-cell b{display:block}.progress-cell span{display:block;margin:4px 0 0;font-size:11px}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-date" data-meta="date">&nbsp;</div>
+    <h1 class="masthead-title"><a href="index.html" data-meta="brand">The Reb Times</a></h1>
+    <div class="masthead-sub">Games &middot; <span data-meta="tagline"></span></div>
+  </div>
+</header>
+
+<nav class="edition-nav" aria-label="Games navigation">
+  <a href="index.html" aria-current="page">Games home</a>
+  <a href="#today">All games</a>
+  <a href="#progress">Your progress</a>
+</nav>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="hero-kicker">The puzzle section</p>
+    <h1>Games for your Bday</h1>
+    <p class="lede">Pick a game. You might recognize a few of the answers.</p>
+  </section>
+
+  <a class="feature" href="games/fiver.html" aria-label="Play Wordle">
+    <div class="feature-copy">
+      <p class="feature-label">Featured word game</p>
+      <h2>Wordle</h2>
+      <p>Six guesses. One five-letter word. A little triumph in every square.</p>
+      <span class="feature-cta">Play now</span>
+    </div>
+    <div class="feature-art" aria-hidden="true">
+      <div class="wordle-preview">
+        <span class="preview-tile gray">H</span><span class="preview-tile gold">E</span><span class="preview-tile gray">A</span><span class="preview-tile green">R</span><span class="preview-tile gray">T</span>
+        <span class="preview-tile"></span><span class="preview-tile"></span><span class="preview-tile"></span><span class="preview-tile"></span><span class="preview-tile"></span>
+      </div>
+    </div>
+  </a>
+
+  <div class="progress-strip" id="progress" aria-label="Your puzzle progress"></div>
+
+  <div class="section-rule" id="today"><h2>All games</h2></div>
+
+  <nav class="card-grid" id="card-grid"></nav>
+
+  <div class="reset-row">
+    <button class="btn ghost small" id="reset-all">Clear all progress</button>
+  </div>
+
+</main>
+
+<div class="modal-backdrop" id="modal-welcome" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-copy">
+  <div class="modal birthday-modal">
+    <p class="birthday-label">Birthday edition</p>
+    <h2 id="welcome-title">Oh no! The New York Times Games page has been hacked.</h2>
+    <p id="welcome-copy">It's party time for Rebecca's birthday. The puzzles have a few surprises just for you.</p>
+    <button class="btn" type="button" data-close>Let's play</button>
+  </div>
+</div>
+
+<footer class="footer">
+  <p data-meta="footerNote">made by yours truly</p>
+  <p style="font-size:12px;margin-top:6px;color:var(--gray-light)">
+    I kept so much hardwork, hope you enjoyed
+  </p>
+</footer>
+
+<script src="data/puzzles.js"></script>
+<script src="assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* Each card's artwork is drawn inline so the page needs no image files. */
+  var ART = {
+    fiver: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<rect x="2" y="12" width="12" height="12" rx="1.5" fill="#6aaa64"/>' +
+      '<rect x="17" y="12" width="12" height="12" rx="1.5" fill="#c9b458"/>' +
+      '<rect x="32" y="12" width="12" height="12" rx="1.5" fill="#d3d6da"/>' +
+      '<rect x="9.5" y="27" width="12" height="12" rx="1.5" fill="#d3d6da"/>' +
+      '<rect x="24.5" y="27" width="12" height="12" rx="1.5" fill="#6aaa64"/></svg>',
+
+    quartets: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<rect x="4" y="4" width="17" height="17" rx="2" fill="#f9df6d"/>' +
+      '<rect x="25" y="4" width="17" height="17" rx="2" fill="#a0c35a"/>' +
+      '<rect x="4" y="25" width="17" height="17" rx="2" fill="#b0c4ef"/>' +
+      '<rect x="25" y="25" width="17" height="17" rx="2" fill="#ba81c5"/></svg>',
+
+    threads: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<path d="M8 34 C8 12, 22 34, 22 12 S38 34, 38 12" fill="none" ' +
+      'stroke="#5ba89a" stroke-width="4" stroke-linecap="round"/>' +
+      '<circle cx="8" cy="34" r="4.5" fill="#f8cd05"/>' +
+      '<circle cx="38" cy="12" r="4.5" fill="#f8cd05"/></svg>',
+
+    honeycomb: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<g fill="#e8e8e8">' +
+      '<path d="M23 3l9 5.2v10.4L23 24l-9-5.4V8.2z"/>' +
+      '<path d="M9 27l9 5.2v10.4L9 48l-9-5.4V32.2z" transform="translate(5,-5)"/>' +
+      '<path d="M37 27l9 5.2v10.4L37 48l-9-5.4V32.2z" transform="translate(-5,-5)"/>' +
+      '</g><path d="M23 14l9 5.2v10.4L23 35l-9-5.4V19.2z" fill="#f7da21"/></svg>',
+
+    mini: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<rect x="3" y="3" width="40" height="40" fill="#fff" stroke="#121212" stroke-width="2"/>' +
+      '<path d="M16 3v40M30 3v40M3 16h40M3 30h40" stroke="#121212" stroke-width="1.4"/>' +
+      '<rect x="3" y="3" width="13" height="13" fill="#6493e6"/>' +
+      '<rect x="30" y="30" width="13" height="13" fill="#121212"/></svg>',
+
+    crossword: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<rect x="3" y="3" width="40" height="40" fill="#fff" stroke="#121212" stroke-width="2"/>' +
+      '<path d="M16 3v40M30 3v40M3 16h40M3 30h40" stroke="#121212" stroke-width="1.4"/>' +
+      '<rect x="30" y="3" width="13" height="13" fill="#121212"/>' +
+      '<rect x="3" y="30" width="13" height="13" fill="#121212"/>' +
+      '<rect x="16" y="16" width="14" height="14" fill="#6493e6"/></svg>',
+
+    letterbox: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<rect x="6" y="6" width="34" height="34" fill="none" stroke="#121212" stroke-width="2"/>' +
+      '<path d="M15 6 L34 40 L15 40 L34 6" fill="none" stroke="#f4a261" ' +
+      'stroke-width="2.4" stroke-linejoin="round"/>' +
+      '<g fill="#121212"><circle cx="15" cy="6" r="3.4"/><circle cx="31" cy="6" r="3.4"/>' +
+      '<circle cx="40" cy="17" r="3.4"/><circle cx="40" cy="31" r="3.4"/>' +
+      '<circle cx="31" cy="40" r="3.4"/><circle cx="15" cy="40" r="3.4"/>' +
+      '<circle cx="6" cy="31" r="3.4"/><circle cx="6" cy="17" r="3.4"/></g></svg>',
+
+    vault: '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+      '<rect x="3" y="3" width="40" height="40" rx="5" fill="#fff" stroke="#121212" stroke-width="2"/>' +
+      '<circle cx="14" cy="14" r="3.4" fill="#121212"/>' +
+      '<circle cx="23" cy="14" r="3.4" fill="#6aaa64"/>' +
+      '<circle cx="32" cy="14" r="3.4" fill="#121212"/>' +
+      '<circle cx="14" cy="23" r="3.4" fill="#121212"/>' +
+      '<circle cx="23" cy="23" r="3.4" fill="#121212"/>' +
+      '<circle cx="32" cy="23" r="3.4" fill="#c9b458"/>' +
+      '<circle cx="14" cy="32" r="3.4" fill="#121212"/>' +
+      '<circle cx="23" cy="32" r="3.4" fill="#121212"/>' +
+      '<circle cx="32" cy="32" r="3.4" fill="#121212"/></svg>',
+
+  };
+
+  var GAMES = [
+    { id: "fiver",     file: "games/fiver.html",      name: "Wordle",
+      kicker: "Word game", tint: "#e7f0e6",
+      desc: "Six tries to land a five-letter word. Green means right letter, right place." },
+    { id: "quartets",  file: "games/quartets.html",   name: "Connections",
+      kicker: "Grouping",  tint: "#efe9f7",
+      desc: "Sixteen words hide four secret groups of four. Four mistakes and it's over." },
+    { id: "threads",   file: "games/threads.html",    name: "Strands",
+      kicker: "Word hunt", tint: "#e4f2ec",
+      desc: "Every letter on the board belongs to a word. One of them spans the whole grid." },
+    { id: "honeycomb", file: "games/honeycomb.html",  name: "Spelling Bee",
+      kicker: "Spelling",  tint: "#fdf6d4",
+      desc: "Make as many words as you can. Every word must use the middle letter." },
+    { id: "mini",      file: "games/mini.html",       name: "The Mini",
+      kicker: "Crossword", tint: "#e6edfb",
+      desc: "A five-by-five crossword made from a few of your favorite things." },
+    { id: "crossword", file: "games/crossword.html", name: "The Crossword",
+      kicker: "Crossword", tint: "#e8ebf5",
+      desc: "A seven-by-seven. Two of the answers are hers." },
+    { id: "letterbox", file: "games/letterbox.html",  name: "Letter Boxed",
+      kicker: "Word chain", tint: "#fdeee1",
+      desc: "Twelve letters round a square. Use them all, never twice from the same side." },
+{ id: "vault",     file: "games/vault.html",      name: "The Vault",
+      kicker: "Code",      tint: "#e6e2f5",
+      desc: "Eight digits stand between you and the door. You know them." },
+  ];
+
+  function stateForCard(id) {
+    var st = RT.gameState(id);
+    if (id === "mini" && st.sig !== RT.puzzles.mini.grid.join("|")) return { status: "new" };
+    return st;
+  }
+
+  function badgeFor(id) {
+    var st = stateForCard(id);
+    if (st.status === "won")      return { text: "Solved", cls: "" };
+    if (st.status === "lost")     return { text: "Played", cls: "is-progress" };
+    if (st.status === "progress") return { text: "In progress", cls: "is-progress" };
+    return null;
+  }
+
+  function renderCards() {
+    var grid = document.getElementById("card-grid");
+    grid.innerHTML = "";
+    GAMES.filter(function (g) { return g.id !== "fiver"; }).forEach(function (g) {
+      var a = RT.el("a", "card");
+      a.href = g.file;
+
+      var art = RT.el("div", "card-art");
+      art.style.background = g.tint;
+      art.innerHTML = ART[g.id];
+      a.appendChild(art);
+
+      a.appendChild(RT.el("div", "card-kicker", g.kicker));
+      a.appendChild(RT.el("h3", "card-name", g.name));
+      a.appendChild(RT.el("p", "card-desc", g.desc));
+      a.appendChild(RT.el("span", "card-cta", "Play"));
+
+      var b = badgeFor(g.id);
+      if (b) {
+        var badge = RT.el("span", "card-badge " + b.cls, b.text);
+        a.appendChild(badge);
+      }
+      grid.appendChild(a);
+    });
+  }
+
+  function renderStreak() {
+    var solved = 0, played = 0;
+    GAMES.forEach(function (g) {
+      var st = stateForCard(g.id);
+      if (st.status === "won") solved++;
+      if (st.status !== "new") played++;
+    });
+    var strip = document.getElementById("progress");
+    strip.innerHTML = "";
+    [
+      [solved + " / " + GAMES.length, "Solved"],
+      [played, "Started"],
+      [GAMES.length - played, "Untouched"]
+    ].forEach(function (pair) {
+      var c = RT.el("div", "progress-cell");
+      c.appendChild(RT.el("b", null, String(pair[0])));
+      c.appendChild(RT.el("span", null, pair[1]));
+      strip.appendChild(c);
+    });
+  }
+
+  function renderFeatured() {
+    var firstWordle = RT.gameState("fiver");
+    var secretUnlocked = Array.isArray(firstWordle.guesses) && firstWordle.guesses[0] === "MUTHE";
+    var id = secretUnlocked ? "secret-fiver" : "fiver";
+    var feature = document.querySelector(".feature");
+    feature.href = secretUnlocked ? "games/fiver.html?secret=1" : "games/fiver.html";
+    feature.setAttribute("aria-label", secretUnlocked ? "Play Secret Wordle" : "Play Wordle");
+    feature.querySelector("h2").textContent = secretUnlocked ? "Secret Wordle" : "Wordle";
+    feature.querySelector(".feature-copy p:not(.feature-label)").textContent = secretUnlocked
+      ? "One more five-letter word. Six guesses to figure it out."
+      : "Six guesses. One five-letter word. A little triumph in every square.";
+    var badge = badgeFor(id);
+    feature.querySelector(".feature-cta").textContent = badge
+      ? (badge.text === "Solved" || badge.text === "Played" ? "Play again" : "Continue")
+      : "Play now";
+  }
+
+  RT.ready(function () {
+    renderCards();
+    renderStreak();
+    renderFeatured();
+    var showWelcome = true;
+    try {
+      showWelcome = sessionStorage.getItem("reb-times-welcome-shown") !== "1";
+      if (showWelcome) sessionStorage.setItem("reb-times-welcome-shown", "1");
+    } catch (e) { /* Storage may be unavailable; the popup can still open. */ }
+    if (showWelcome) RT.modal("welcome").open();
+    document.getElementById("reset-all").addEventListener("click", function () {
+      if (!confirm("Clear progress on all ten games? This can't be undone.")) return;
+      RT.store.clearAll();
+      renderCards();
+      renderStreak();
+      renderFeatured();
+      RT.toast("All progress cleared");
+    });
+  });
+})();
+</script>
+</body>
+</html>

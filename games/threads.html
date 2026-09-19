@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Strands</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  :root{ --thr-found:#aedcc7; --thr-span:#f8cd05; --thr-active:#d7d7d7; }
+  .theme-card{
+    border:1px solid var(--ink);border-radius:4px;
+    padding:14px 18px;text-align:center;width:100%;
+  }
+  .theme-card .kick{
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--gray);font-weight:700;
+  }
+  .theme-card .name{
+    font-family:var(--serif);font-size:22px;font-weight:800;margin-top:5px;
+  }
+  .progress-line{font-family:var(--serif-text);font-size:15px;color:var(--gray);text-align:center}
+  .progress-line b{color:var(--ink)}
+
+  .gamestage{max-width:440px}
+  .thr-wrap{position:relative;width:100%;max-width:400px;touch-action:none}
+  .thr-grid{
+    position:relative;display:grid;gap:0;width:100%;
+    user-select:none;-webkit-user-select:none;
+  }
+  .thr-cell{
+    position:relative;aspect-ratio:1;display:grid;place-items:center;
+    font-family:var(--sans);font-size:22px;font-weight:700;
+    color:var(--ink);cursor:pointer;background:none;border:none;
+    z-index:2;
+  }
+  .thr-cell::before{
+    content:"";position:absolute;inset:12%;border-radius:50%;
+    background:#f0f0ed;transition:background .12s ease;z-index:-1;
+  }
+  .thr-cell.active::before{background:var(--thr-active)}
+  .thr-cell.found::before{background:var(--thr-found)}
+  .thr-cell.span::before{background:var(--thr-span)}
+  .thr-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+  .wordbar{
+    min-height:34px;display:grid;place-items:center;
+    font-family:var(--sans);font-weight:800;font-size:17px;letter-spacing:.09em;
+  }
+  .found-list{
+    display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:100%;
+  }
+  .chip{
+    font-size:12px;font-weight:700;letter-spacing:.05em;
+    padding:5px 10px;border-radius:999px;background:var(--thr-found);
+  }
+  .chip.span{background:var(--thr-span)}
+  .hintbar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .hint-meter{
+    width:110px;height:9px;border-radius:999px;background:#e6e6e6;overflow:hidden;
+  }
+  .hint-meter i{display:block;height:100%;background:#5ba89a;width:0;transition:width .3s ease}
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">Strands</h1>
+  <div class="gamebar-right">
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage">
+  <div class="theme-card">
+    <div class="kick">Today's theme</div>
+    <div class="name" id="theme-name"></div>
+  </div>
+
+  <p class="progress-line" id="progress"></p>
+  <div class="wordbar" id="wordbar">&nbsp;</div>
+
+  <div class="thr-wrap">
+    <div class="thr-grid" id="grid"></div>
+    <svg class="thr-lines" id="lines" aria-hidden="true"></svg>
+  </div>
+
+  <div class="hintbar">
+    <div class="hint-meter" title="Find any other real word to charge a hint"><i id="hint-fill"></i></div>
+    <button class="btn ghost small" id="hint-btn" disabled>Hint</button>
+  </div>
+
+  <div class="found-list" id="found"></div>
+</main>
+
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <p style="text-align:center">Find the words that fit today's theme.</p>
+    <ul>
+      <li>Drag across touching letters, or tap them one at a time, to spell a word.</li>
+      <li>Tap the last letter again (or press Enter) to submit it.</li>
+      <li>Theme words turn <b style="background:var(--thr-found);padding:0 4px">green</b>.</li>
+      <li>One special word stretches right across the board and describes the whole theme.
+          It turns <b style="background:var(--thr-span);padding:0 4px">yellow</b>.</li>
+      <li>Every letter on the board belongs to exactly one word.</li>
+      <li>Find any other real word to charge up a hint.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-end" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2>Every thread pulled</h2>
+    <p id="end-msg"></p>
+    <hr>
+    <button class="btn ghost" id="replay">Play again</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../data/dict-words.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ID  = "threads";
+  var CFG = RT.puzzles.strands;
+  var ROWS = CFG.rows, COLS = CFG.cols;
+  var SPAN = CFG.spangram.toUpperCase();
+
+  /* word -> path, and a lookup from "r,c" -> word for painting */
+  var PATHS = {};
+  Object.keys(CFG.paths).forEach(function (w) { PATHS[w.toUpperCase()] = CFG.paths[w]; });
+  var THEME_WORDS = Object.keys(PATHS);
+
+  var found     = [];   // theme words found so far
+  var extras    = 0;    // non-theme real words found (charge hints)
+  var hintsUsed = [];   // words whose path has been revealed as a hint
+  var path      = [];   // current selection, array of [r,c]
+  var dragging  = false;
+
+  var gridEl = document.getElementById("grid");
+  var svgEl  = document.getElementById("lines");
+  var cells  = [];
+
+  /* ------------------------------------------------------------- build */
+  function buildGrid() {
+    gridEl.style.gridTemplateColumns = "repeat(" + COLS + ",1fr)";
+    gridEl.innerHTML = "";
+    cells = [];
+    for (var r = 0; r < ROWS; r++) {
+      cells[r] = [];
+      for (var c = 0; c < COLS; c++) {
+        var b = RT.el("button", "thr-cell", CFG.grid[r][c]);
+        b.type = "button";
+        b.dataset.r = r; b.dataset.c = c;
+        gridEl.appendChild(b);
+        cells[r][c] = b;
+      }
+    }
+  }
+
+  function key(r, c) { return r + "," + c; }
+  function adjacent(a, b) {
+    return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) === 1;
+  }
+  function inPath(r, c) {
+    return path.some(function (p) { return p[0] === r && p[1] === c; });
+  }
+
+  /* --------------------------------------------------------- rendering */
+  function centerOf(r, c) {
+    var el = cells[r][c];
+    return { x: el.offsetLeft + el.offsetWidth / 2,
+             y: el.offsetTop + el.offsetHeight / 2 };
+  }
+
+  function drawLines() {
+    var w = gridEl.offsetWidth, h = gridEl.offsetHeight;
+    if (!w) return;
+    svgEl.setAttribute("viewBox", "0 0 " + w + " " + h);
+    svgEl.innerHTML = "";
+
+    function stroke(pts, color, width) {
+      if (pts.length < 2) return;
+      var d = pts.map(function (p, i) {
+        var pt = centerOf(p[0], p[1]);
+        return (i ? "L" : "M") + pt.x + " " + pt.y;
+      }).join(" ");
+      var el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      el.setAttribute("d", d);
+      el.setAttribute("fill", "none");
+      el.setAttribute("stroke", color);
+      el.setAttribute("stroke-width", width);
+      el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("stroke-linejoin", "round");
+      svgEl.appendChild(el);
+    }
+
+    /* solved words first, then the live selection on top */
+    found.forEach(function (w) {
+      stroke(PATHS[w], w === SPAN ? "#f0c000" : "#8fcdb4", 11);
+    });
+    hintsUsed.forEach(function (w) {
+      if (found.indexOf(w) > -1) return;
+      var pts = PATHS[w].map(function (p) { return p; });
+      stroke(pts, "#c9c9c9", 11);
+    });
+    stroke(path, "#b9b9b9", 11);
+  }
+
+  function paint() {
+    /* reset */
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        cells[r][c].className = "thr-cell";
+      }
+    }
+    found.forEach(function (w) {
+      PATHS[w].forEach(function (p) {
+        cells[p[0]][p[1]].classList.add(w === SPAN ? "span" : "found");
+      });
+    });
+    path.forEach(function (p) {
+      var el = cells[p[0]][p[1]];
+      if (!el.classList.contains("found") && !el.classList.contains("span")) {
+        el.classList.add("active");
+      }
+    });
+
+    document.getElementById("wordbar").textContent =
+      path.map(function (p) { return CFG.grid[p[0]][p[1]]; }).join("") || " ";
+
+    document.getElementById("progress").innerHTML =
+      "<b>" + found.length + "</b> of <b>" + THEME_WORDS.length + "</b> theme words found";
+
+    var chips = document.getElementById("found");
+    chips.innerHTML = "";
+    found.forEach(function (w) {
+      chips.appendChild(RT.el("span", "chip" + (w === SPAN ? " span" : ""), w));
+    });
+
+    var charge = extras % 3;
+    var ready  = extras > 0 && charge === 0 && hintsUsed.length < Math.floor(extras / 3);
+    document.getElementById("hint-fill").style.width =
+      (ready ? 100 : Math.round(charge / 3 * 100)) + "%";
+    document.getElementById("hint-btn").disabled = !ready;
+
+    drawLines();
+  }
+
+  /* ---------------------------------------------------------- gameplay */
+  function currentWord() {
+    return path.map(function (p) { return CFG.grid[p[0]][p[1]]; }).join("");
+  }
+
+  function addCell(r, c) {
+    if (cells[r][c].classList.contains("found") ||
+        cells[r][c].classList.contains("span")) return;
+
+    /* stepping back onto the previous letter undoes the last step */
+    if (path.length >= 2 &&
+        path[path.length - 2][0] === r && path[path.length - 2][1] === c) {
+      path.pop(); paint(); return;
+    }
+    if (inPath(r, c)) {
+      /* tapping the final letter again submits */
+      var last = path[path.length - 1];
+      if (last[0] === r && last[1] === c) submit();
+      return;
+    }
+    if (path.length && !adjacent(path[path.length - 1], [r, c])) {
+      path = [];   // broke the chain: start over from here
+    }
+    path.push([r, c]);
+    paint();
+  }
+
+  function submit() {
+    var w = currentWord();
+    if (w.length < 3) { path = []; paint(); return; }
+
+    if (found.indexOf(w) > -1) { RT.toast("Already found"); path = []; paint(); return; }
+
+    if (THEME_WORDS.indexOf(w) > -1) {
+      /* Must be traced along its actual path, not just spelled by luck. */
+      var real = PATHS[w];
+      var same = real.length === path.length && real.every(function (p, i) {
+        return p[0] === path[i][0] && p[1] === path[i][1];
+      });
+      var reversed = real.length === path.length && real.every(function (p, i) {
+        var q = path[path.length - 1 - i];
+        return p[0] === q[0] && p[1] === q[1];
+      });
+      if (same || reversed) {
+        found.push(w);
+        path = [];
+        paint();
+        RT.toast(w === SPAN ? "That's the spangram!" : w, 1200);
+        save();
+        if (found.length === THEME_WORDS.length) finish();
+        return;
+      }
+      RT.toast("Right word, wrong path");
+      path = []; paint();
+      return;
+    }
+
+    if (window.DICT && window.DICT.has(w)) {
+      extras++;
+      RT.toast(w + ", not a theme word, but it charges a hint");
+      path = []; paint(); save();
+      return;
+    }
+
+    RT.toast("Not in word list");
+    path = []; paint();
+  }
+
+  function useHint() {
+    var remaining = THEME_WORDS.filter(function (w) {
+      return found.indexOf(w) === -1 && hintsUsed.indexOf(w) === -1;
+    });
+    if (!remaining.length) { RT.toast("Nothing left to hint"); return; }
+    /* Hint the shortest remaining word, gentlest nudge. */
+    remaining.sort(function (a, b) { return PATHS[a].length - PATHS[b].length; });
+    hintsUsed.push(remaining[0]);
+    RT.toast("One word outlined on the board");
+    paint(); save();
+  }
+
+  function finish() {
+    RT.saveState(ID, { status: "won" });
+    RT.bumpStats(ID, true);
+    RT.celebrate();
+    setTimeout(function () {
+      document.getElementById("end-msg").textContent =
+        "You found all " + THEME_WORDS.length + " words, spangram and all. The theme was “" +
+        CFG.theme + ".”";
+      RT.modal("end").open();
+    }, 700);
+  }
+
+  /* ------------------------------------------------------- persistence */
+  function signature() { return CFG.grid.join("") + "|" + THEME_WORDS.slice().sort().join(","); }
+
+  function save() {
+    RT.saveState(ID, {
+      status: found.length === THEME_WORDS.length ? "won"
+            : (found.length || extras ? "progress" : "new"),
+      found: found, extras: extras, hintsUsed: hintsUsed, sig: signature()
+    });
+  }
+
+  function load() {
+    var st = RT.gameState(ID);
+    if (!st.found || st.sig !== signature()) { RT.resetState(ID); return; }
+    found     = st.found.filter(function (w) { return THEME_WORDS.indexOf(w) > -1; });
+    extras    = st.extras || 0;
+    hintsUsed = st.hintsUsed || [];
+  }
+
+  /* ------------------------------------------------------ input wiring */
+  function cellFromEvent(e) {
+    var t = e.touches ? e.touches[0] : e;
+    var el = document.elementFromPoint(t.clientX, t.clientY);
+    if (!el || !el.classList.contains("thr-cell")) return null;
+    return [Number(el.dataset.r), Number(el.dataset.c)];
+  }
+
+  function wireInput() {
+    /* Tap to build a path one letter at a time. */
+    gridEl.addEventListener("click", function (e) {
+      var el = e.target.closest(".thr-cell");
+      if (!el || dragging) return;
+      addCell(Number(el.dataset.r), Number(el.dataset.c));
+    });
+
+    /* Drag to trace. */
+    gridEl.addEventListener("pointerdown", function (e) {
+      var el = e.target.closest(".thr-cell");
+      if (!el) return;
+      dragging = false;
+      var startR = Number(el.dataset.r), startC = Number(el.dataset.c);
+
+      function move(ev) {
+        var cell = cellFromEvent(ev);
+        if (!cell) return;
+        if (!dragging) {
+          if (cell[0] === startR && cell[1] === startC) return;
+          dragging = true;
+          path = [];
+          addCell(startR, startC);
+        }
+        ev.preventDefault();
+        if (!inPath(cell[0], cell[1]) || path.length >= 2) addCell(cell[0], cell[1]);
+      }
+      function up() {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        if (dragging) {
+          submit();
+          setTimeout(function () { dragging = false; }, 0);
+        }
+      }
+      document.addEventListener("pointermove", move, { passive: false });
+      document.addEventListener("pointerup", up);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (RT.$(".modal-backdrop.open")) return;
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+      if (e.key === "Escape" || e.key === "Backspace") { path = []; paint(); }
+    });
+
+    addEventListener("resize", drawLines);
+  }
+
+  /* -------------------------------------------------------------- boot */
+  RT.ready(function () {
+    document.getElementById("theme-name").textContent = CFG.clue || CFG.theme;
+    buildGrid();
+    load();
+    paint();
+    /* fonts can shift layout; redraw once they've settled */
+    setTimeout(drawLines, 120);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawLines);
+
+    wireInput();
+    document.getElementById("hint-btn").addEventListener("click", useHint);
+    document.getElementById("replay").addEventListener("click", function () {
+      RT.resetState(ID);
+      found = []; extras = 0; hintsUsed = []; path = [];
+      paint();
+      RT.modal("end").close();
+    });
+  });
+})();
+</script>
+</body>
+</html>

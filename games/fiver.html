@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wordle</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .gamestage{padding-top:20px}
+  .board{
+    display:grid;grid-template-rows:repeat(6,1fr);gap:5px;
+    padding:8px 0;width:360px;max-width:100%;
+  }
+  .brow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+  .tile{
+    aspect-ratio:1;
+    display:grid;place-items:center;
+    font-family:var(--sans);font-size:32px;font-weight:700;
+    text-transform:uppercase;line-height:1;
+    border:2px solid #d3d6da;background:#fff;color:var(--ink);
+    user-select:none;
+  }
+  .tile.filled{border-color:#878a8c}
+  .tile.reveal{animation:flip .55s ease forwards}
+  @keyframes flip{
+    0%{transform:rotateX(0);}
+    45%{transform:rotateX(90deg);}
+    55%{transform:rotateX(90deg);}
+    100%{transform:rotateX(0);}
+  }
+  .tile[data-state="absent"]{background:var(--tile-absent);border-color:var(--tile-absent);color:#fff}
+  .tile[data-state="present"]{background:var(--tile-present);border-color:var(--tile-present);color:#fff}
+  .tile[data-state="correct"]{background:var(--tile-correct);border-color:var(--tile-correct);color:#fff}
+  .hintline{
+    font-family:var(--serif-text);font-style:italic;font-size:15px;
+    color:var(--gray);text-align:center;min-height:22px;
+  }
+  .answerline{
+    font-family:var(--serif);font-size:22px;font-weight:700;letter-spacing:.06em;
+  }
+  .share-grid{
+    font-size:13px;line-height:1.15;letter-spacing:2px;margin:12px 0;
+  }
+  .keyboard{max-width:540px}
+  .keyboard .key{height:62px}
+  .keyboard .key:not(.wide):not(.spacer){font-size:clamp(15px,4vw,17px)}
+  @media (max-width:560px){
+    .keyboard .key{height:52px}
+  }
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">Wordle</h1>
+  <div class="gamebar-right">
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="iconbtn" id="hint-btn" aria-label="Hint" title="Hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.5.7.5 1.1h6c0-.4.1-.8.5-1.1A6 6 0 0 0 12 3z"/></svg>
+    </button>
+    <button class="iconbtn" data-modal="stats" aria-label="Statistics" title="Statistics">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage">
+  <div class="hintline" id="hintline"></div>
+  <div class="board" id="board" aria-label="Guess grid"></div>
+  <div class="keyboard" id="keyboard"></div>
+</main>
+
+<!-- how to play -->
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <p style="text-align:center">Guess the word in six tries.</p>
+    <ul>
+      <li>Type any five letters for a guess.</li>
+      <li>After each guess the tiles change colour to show how close you were.</li>
+      <li><b style="color:var(--tile-correct)">Green</b>: right letter, right spot.</li>
+      <li><b style="color:var(--tile-present)">Yellow</b>: right letter, wrong spot.</li>
+      <li><b style="color:var(--tile-absent)">Grey</b>: that letter isn't in the word.</li>
+      <li>Stuck? Tap the lightbulb for a clue.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- stats / end of game -->
+<div class="modal-backdrop" id="modal-stats" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 id="stats-title">Statistics</h2>
+    <p id="stats-msg"></p>
+    <div class="stats-row" id="stats-row"></div>
+    <div class="share-grid" id="share-grid"></div>
+    <hr>
+    <button class="btn" id="share-btn">Copy result</button>
+    <button class="btn ghost" id="again-btn" style="margin-top:8px">Play again</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-secret" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="secret-title" aria-describedby="secret-message">
+  <div class="modal">
+    <h2 id="secret-title">One more Wordle</h2>
+    <p id="secret-message">I knew you would guess Muthe on your first try 😠, so now guess this hard wordle now</p>
+    <button class="btn" type="button" data-close>Let's play</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../data/dict-wordle.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var params = new URLSearchParams(window.location.search);
+  var SECRET = params.get("secret") === "1";
+  if (SECRET && params.get("intro") !== "1") {
+    var firstWordle = RT.gameState("fiver");
+    if (!Array.isArray(firstWordle.guesses) || firstWordle.guesses[0] !== "MUTHE") {
+      window.location.replace("fiver.html");
+      return;
+    }
+  }
+  var CFG    = SECRET ? RT.puzzles.secretWordle : RT.puzzles.wordle;
+  var ANSWER = CFG.answer.toUpperCase();
+  var LEN    = ANSWER.length;
+  var TRIES  = 6;
+  var ID     = SECRET ? "secret-fiver" : "fiver";
+
+  var guesses = [];     // submitted guesses
+  var current = "";     // row being typed
+  var over    = false;
+
+  var boardEl = document.getElementById("board");
+  var tiles   = [];
+  var kb;
+
+  /* ---------------------------------------------------------- build UI */
+  function buildBoard() {
+    boardEl.innerHTML = "";
+    boardEl.style.gridTemplateRows = "repeat(" + TRIES + ",1fr)";
+    tiles = [];
+    for (var r = 0; r < TRIES; r++) {
+      var row = RT.el("div", "brow");
+      row.style.gridTemplateColumns = "repeat(" + LEN + ",1fr)";
+      var rowTiles = [];
+      for (var c = 0; c < LEN; c++) {
+        var t = RT.el("div", "tile");
+        t.setAttribute("role", "img");
+        row.appendChild(t);
+        rowTiles.push(t);
+      }
+      tiles.push(rowTiles);
+      boardEl.appendChild(row);
+    }
+  }
+
+  /* ------------------------------------------------------ scoring rule */
+  /* Two passes so repeated letters are counted correctly: greens first,
+     then yellows drawn from whatever letters are actually left over. */
+  function score(guess) {
+    var res = new Array(LEN).fill("absent");
+    var pool = {};
+    var i;
+    for (i = 0; i < LEN; i++) {
+      if (guess[i] === ANSWER[i]) res[i] = "correct";
+      else pool[ANSWER[i]] = (pool[ANSWER[i]] || 0) + 1;
+    }
+    for (i = 0; i < LEN; i++) {
+      if (res[i] === "correct") continue;
+      var ch = guess[i];
+      if (pool[ch] > 0) { res[i] = "present"; pool[ch]--; }
+    }
+    return res;
+  }
+
+  /* --------------------------------------------------------- rendering */
+  function paintRow(r, guess, states, animate) {
+    guess.split("").forEach(function (ch, c) {
+      var t = tiles[r][c];
+      t.textContent = ch;
+      t.classList.add("filled");
+      if (animate) {
+        setTimeout(function () {
+          t.classList.add("reveal");
+          setTimeout(function () {
+            t.setAttribute("data-state", states[c]);
+            kb.setState(ch, states[c]);
+          }, 250);
+        }, c * 220);
+      } else {
+        t.setAttribute("data-state", states[c]);
+        kb.setState(ch, states[c]);
+      }
+    });
+  }
+
+  function paintCurrent(typedIndex) {
+    var r = guesses.length;
+    if (r >= TRIES) return;
+    for (var c = 0; c < LEN; c++) {
+      var t = tiles[r][c];
+      var ch = current[c] || "";
+      t.textContent = ch;
+      t.classList.toggle("filled", !!ch);
+      t.classList.remove("pop");
+    }
+    if (typedIndex != null) {
+      var typedTile = tiles[r][typedIndex];
+      void typedTile.offsetWidth;
+      typedTile.classList.add("pop");
+    }
+  }
+
+  function redrawAll() {
+    guesses.forEach(function (g, r) { paintRow(r, g, score(g), false); });
+    paintCurrent();
+  }
+
+  /* ---------------------------------------------------------- gameplay */
+  function isWord(w) {
+    if (w === ANSWER) return true;
+    /* A custom wordList means those are the only guesses allowed. */
+    if (CFG.wordList && CFG.wordList.length) {
+      return CFG.wordList.some(function (x) { return x.toUpperCase() === w; });
+    }
+    if (!CFG.strictDictionary) return true;
+    return !!(window.DICT5 && window.DICT5.has(w));
+  }
+
+  function shakeRow() {
+    var r = guesses.length;
+    if (r >= TRIES) return;
+    var row = boardEl.children[r];
+    row.classList.remove("shake");
+    void row.offsetWidth;
+    row.classList.add("shake");
+  }
+
+  function shouldStartSecret(guess, guessCount) {
+    return !SECRET && guessCount === 1 && guess === "MUTHE";
+  }
+
+  function submit() {
+    if (current.length < LEN) { RT.toast("Not enough letters"); shakeRow(); return; }
+    if (!isWord(current))     { RT.toast("Not in word list");  shakeRow(); return; }
+
+    var guess = current;
+    var states = score(guess);
+    guesses.push(guess);
+    current = "";
+    paintRow(guesses.length - 1, guess, states, true);
+
+    var won  = guess === ANSWER;
+    var secretTrigger = shouldStartSecret(guess, guesses.length);
+    var done = won || secretTrigger || guesses.length === TRIES;
+    var delay = LEN * 220 + 380;
+
+    save(done ? (won || secretTrigger ? "won" : "lost") : "progress");
+
+    if (!done) return;
+    over = true;
+    setTimeout(function () {
+      if (won || secretTrigger) {
+        tiles[guesses.length - 1].forEach(function (t, i) {
+          setTimeout(function () { t.classList.add("bounce"); }, i * 90);
+        });
+        RT.celebrate();
+      }
+      RT.bumpStats(ID, won || secretTrigger);
+      if (secretTrigger) {
+        setTimeout(function () { window.location.assign("fiver.html?secret=1&intro=1"); }, 900);
+        return;
+      }
+      setTimeout(function () { showEnd(won); }, won ? 900 : 300);
+    }, delay);
+  }
+
+  function onKey(k) {
+    if (over) return;
+    if (k === "ENTER") return submit();
+    if (k === "BACK") {
+      if (current.length) { current = current.slice(0, -1); paintCurrent(); save("progress"); }
+      return;
+    }
+    if (current.length < LEN) {
+      var typedIndex = current.length;
+      current += k;
+      paintCurrent(typedIndex);
+      save("progress");
+    }
+  }
+
+  /* ------------------------------------------------------- persistence */
+  function save(status) {
+    RT.saveState(ID, { status: status, guesses: guesses, current: current, answer: ANSWER });
+  }
+
+  function load() {
+    var st = RT.gameState(ID);
+    /* If the answer was changed in puzzles.js, start clean rather than
+       showing scores computed against the old word. */
+    if (st.answer && st.answer !== ANSWER) { RT.resetState(ID); return; }
+    if (!st.guesses) return;
+    guesses = st.guesses.filter(function (g) { return g.length === LEN; });
+    current = (st.current || "").slice(0, LEN);
+    over = st.status === "won" || st.status === "lost";
+  }
+
+  /* -------------------------------------------------------- end screen */
+  function emojiGrid() {
+    var map = { correct: "🟩", present: "🟨", absent: "⬜" };
+    return guesses.map(function (g) {
+      return score(g).map(function (s) { return map[s]; }).join("");
+    }).join("\n");
+  }
+
+  function showEnd(won) {
+    var s = RT.getStats(ID);
+    document.getElementById("stats-title").textContent =
+      won ? "You got it" : "Next time";
+    document.getElementById("stats-msg").innerHTML = won
+      ? "Solved in " + guesses.length + (guesses.length === 1 ? " guess." : " guesses.")
+      : 'The word was <span class="answerline">' + ANSWER + "</span>";
+    document.getElementById("share-grid").textContent = emojiGrid();
+
+    var row = document.getElementById("stats-row");
+    row.innerHTML = "";
+    [[s.played, "Played"],
+     [s.played ? Math.round(s.won / s.played * 100) + "%" : "0%", "Win rate"],
+     [s.streak, "Streak"],
+     [s.best, "Best"]].forEach(function (p) {
+      var d = RT.el("div", "stat");
+      d.appendChild(RT.el("b", null, String(p[0])));
+      d.appendChild(RT.el("span", null, p[1]));
+      row.appendChild(d);
+    });
+
+    RT.modal("stats").open();
+  }
+
+  function openStats() {
+    if (over) return;
+    var s = RT.getStats(ID);
+    document.getElementById("stats-title").textContent = "Statistics";
+    document.getElementById("stats-msg").textContent = "";
+    document.getElementById("share-grid").textContent = "";
+    var row = document.getElementById("stats-row");
+    row.innerHTML = "";
+    [[s.played, "Played"],
+     [s.played ? Math.round(s.won / s.played * 100) + "%" : "0%", "Win rate"],
+     [s.streak, "Streak"],
+     [s.best, "Best"]].forEach(function (p) {
+      var d = RT.el("div", "stat");
+      d.appendChild(RT.el("b", null, String(p[0])));
+      d.appendChild(RT.el("span", null, p[1]));
+      row.appendChild(d);
+    });
+  }
+
+  /* -------------------------------------------------------------- boot */
+  RT.ready(function () {
+    if (SECRET) {
+      document.title = "Secret Wordle | The Reb Times";
+      document.querySelector(".gamebar-title").textContent = "Secret Wordle";
+    }
+    buildBoard();
+    kb = RT.keyboard("#keyboard", { onKey: onKey });
+    load();
+    redrawAll();
+
+    if (over) {
+      setTimeout(function () { showEnd(RT.gameState(ID).status === "won"); }, 420);
+    }
+    if (SECRET && params.get("intro") === "1" && !over) {
+      RT.modal("secret").open();
+      try { window.history.replaceState(null, "", "fiver.html?secret=1"); } catch (e) { /* Keep the intro URL if history is unavailable. */ }
+    }
+
+    document.getElementById("hint-btn").addEventListener("click", function () {
+      document.getElementById("hintline").textContent = CFG.hint || "No clue today.";
+      RT.toast("Clue revealed");
+    });
+
+    document.querySelector('[data-modal="stats"]').addEventListener("click", openStats);
+
+    document.getElementById("share-btn").addEventListener("click", function () {
+      var meta = RT.puzzles.meta || {};
+      var text = (meta.brand || "The Reb Times") + (SECRET ? ": Secret Wordle\n" : ": Wordle\n") +
+                 (guesses[guesses.length - 1] === ANSWER ? guesses.length : "X") +
+                 "/" + TRIES + "\n\n" + emojiGrid();
+      RT.copyText(text).then(function (ok) {
+        RT.toast(ok ? "Copied to clipboard" : "Couldn't copy");
+      });
+    });
+
+    document.getElementById("again-btn").addEventListener("click", function () {
+      RT.resetState(ID);
+      guesses = []; current = ""; over = false;
+      buildBoard();
+      kb.reset();
+      document.getElementById("hintline").textContent = "";
+      RT.modal("stats").close();
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Connections</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%23121212%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%236aaa64%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%226%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23f7da21%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23b0c4ef%22%2F%3E%3Crect%20x%3D%2217%22%20y%3D%2217%22%20width%3D%229%22%20height%3D%229%22%20fill%3D%22%23e8a0b8%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  :root{
+    --lvl0:#f9df6d; --lvl1:#a0c35a; --lvl2:#b0c4ef; --lvl3:#ba81c5;
+  }
+  .gamestage{max-width:760px}
+  .prompt{
+    font-family:var(--serif-text);font-size:16px;color:var(--gray);text-align:center;
+  }
+  .solved-stack{width:100%;display:flex;flex-direction:column;gap:10px}
+  .solved{
+    border-radius:6px;min-height:96px;padding:16px 12px;text-align:center;
+    display:flex;flex-direction:column;justify-content:center;
+    animation:dropIn .35s ease;
+  }
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  .solved b{
+    display:block;font-size:15px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;color:#121212;
+  }
+  .solved span{
+    display:block;font-size:16px;margin-top:3px;color:#121212;letter-spacing:.02em;
+  }
+  .solved[data-level="0"]{background:var(--lvl0)}
+  .solved[data-level="1"]{background:var(--lvl1)}
+  .solved[data-level="2"]{background:var(--lvl2)}
+  .solved[data-level="3"]{background:var(--lvl3)}
+
+  .tile-grid{
+    width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  }
+  .word{
+    appearance:none;border:none;cursor:pointer;
+    background:#efefe6;color:var(--ink);
+    border-radius:6px;
+    min-height:96px;padding:8px 6px;
+    font-family:var(--sans);font-size:18px;font-weight:700;
+    letter-spacing:.01em;text-transform:uppercase;
+    display:grid;place-items:center;text-align:center;
+    transition:background .12s ease,color .12s ease,transform .1s ease;
+    word-break:break-word;line-height:1.1;
+  }
+  .word:hover{background:#e6e6da}
+  .word.sel{background:#5a594e;color:#fff}
+  .word.wrong{animation:shake .5s}
+  .word.jump{animation:jump .35s ease}
+  .word.resolving{transition:background .45s ease,color .45s ease}
+  .word.resolving[data-level="0"]{background:var(--lvl0);color:var(--ink)}
+  .word.resolving[data-level="1"]{background:var(--lvl1);color:var(--ink)}
+  .word.resolving[data-level="2"]{background:var(--lvl2);color:var(--ink)}
+  .word.resolving[data-level="3"]{background:var(--lvl3);color:var(--ink)}
+  @keyframes jump{0%{transform:translateY(0)}40%{transform:translateY(-12px)}100%{transform:translateY(0)}}
+
+  .mistakes{
+    display:flex;align-items:center;gap:9px;justify-content:center;
+    font-size:14px;color:var(--gray);
+  }
+  .dot{width:15px;height:15px;border-radius:50%;background:#5a594e;transition:opacity .3s,transform .3s}
+  .dot.gone{opacity:.15;transform:scale(.7)}
+  .controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .controls .btn{font-size:14px;padding:10px 20px}
+  @media (max-width:460px){
+    .word{font-size:13px;min-height:74px;padding:6px 3px}
+    .solved{min-height:74px;padding:10px 8px}
+    .solved b{font-size:13px}
+    .solved span{font-size:13px}
+    .controls .btn{font-size:13px;padding:8px 16px}
+  }
+</style>
+</head>
+<body>
+
+<header class="gamebar">
+  <div class="gamebar-left"><a class="backlink" href="../index.html">&larr; Games</a></div>
+  <h1 class="gamebar-title">Connections</h1>
+  <div class="gamebar-right">
+    <button class="iconbtn" data-modal="howto" aria-label="How to play" title="How to play">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.3"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="gamestage">
+  <p class="prompt">Find four groups of four.</p>
+  <div class="solved-stack" id="solved"></div>
+  <div class="tile-grid" id="grid"></div>
+  <div class="mistakes">Mistakes remaining <span id="dots" style="display:flex;gap:9px"></span></div>
+  <div class="controls">
+    <button class="btn ghost small" id="shuffle">Shuffle</button>
+    <button class="btn ghost small" id="deselect">Deselect all</button>
+    <button class="btn small" id="submit" disabled>Submit</button>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="modal-howto" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal modal-rules">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 style="text-align:center">How to play</h2>
+    <p style="text-align:center">Sort sixteen words into four secret groups.</p>
+    <ul>
+      <li>Pick four words you think belong together, then hit Submit.</li>
+      <li>Get it right and the group locks in, colour-coded by difficulty.</li>
+      <li>Yellow is the gentlest group; purple is the sneakiest.</li>
+      <li>If three of your four are correct, you'll be told you're one away.</li>
+      <li>Four wrong guesses and the answers are revealed.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-end" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="iconbtn close" data-close aria-label="Close">&times;</button>
+    <h2 id="end-title"></h2>
+    <p id="end-msg"></p>
+    <hr>
+    <button class="btn ghost" id="replay">Play again</button>
+  </div>
+</div>
+
+<script src="../data/puzzles.js"></script>
+<script src="../assets/js/core.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ID = "quartets";
+  var GROUPS = RT.puzzles.connections.groups;
+  var MAX_MISTAKES = 4;
+
+  /* Map each word to the group it belongs to. */
+  var owner = {};
+  GROUPS.forEach(function (g, i) {
+    g.words.forEach(function (w) { owner[w.toUpperCase()] = i; });
+  });
+
+  var allWords = GROUPS.reduce(function (acc, g) {
+    return acc.concat(g.words.map(function (w) { return w.toUpperCase(); }));
+  }, []);
+
+  var order     = [];   // remaining words, in display order
+  var solved    = [];   // indexes of solved groups, in the order found
+  var selected  = [];
+  var mistakes  = 0;
+  var over      = false;
+  var animating = false;
+
+  var gridEl   = document.getElementById("grid");
+  var solvedEl = document.getElementById("solved");
+  var dotsEl   = document.getElementById("dots");
+  var submitBt = document.getElementById("submit");
+
+  /* --------------------------------------------------------- rendering */
+  function renderSolved() {
+    while (solvedEl.children.length > solved.length) solvedEl.lastElementChild.remove();
+    solved.forEach(function (gi, index) {
+      var existing = solvedEl.children[index];
+      if (existing && existing.getAttribute("data-group") === String(gi)) return;
+      var g = GROUPS[gi];
+      var d = RT.el("div", "solved");
+      d.setAttribute("data-group", gi);
+      d.setAttribute("data-level", g.level);
+      d.appendChild(RT.el("b", null, g.title));
+      d.appendChild(RT.el("span", null,
+        g.words.map(function (w) { return w.toUpperCase(); }).join(", ")));
+      if (existing) solvedEl.replaceChild(d, existing);
+      else solvedEl.appendChild(d);
+    });
+  }
+
+  function renderGrid() {
+    gridEl.innerHTML = "";
+    order.forEach(function (w) {
+      var b = RT.el("button", "word", w);
+      b.type = "button";
+      b.setAttribute("data-word", w);
+      if (selected.indexOf(w) > -1) b.classList.add("sel");
+      b.addEventListener("click", function () { toggle(w); });
+      gridEl.appendChild(b);
+    });
+    gridEl.style.display = order.length ? "grid" : "none";
+  }
+
+  function renderDots() {
+    if (dotsEl.children.length !== MAX_MISTAKES) {
+      dotsEl.innerHTML = "";
+      for (var i = 0; i < MAX_MISTAKES; i++) dotsEl.appendChild(RT.el("span", "dot"));
+    }
+    for (var j = 0; j < MAX_MISTAKES; j++) {
+      dotsEl.children[j].classList.toggle("gone", j >= MAX_MISTAKES - mistakes);
+    }
+  }
+
+  function renderControls() {
+    submitBt.disabled = selected.length !== 4 || over || animating;
+    document.getElementById("shuffle").disabled = over || animating;
+    document.getElementById("deselect").disabled = over || animating || !selected.length;
+  }
+
+  function render() {
+    renderSolved(); renderGrid(); renderDots(); renderControls();
+  }
+
+  /* ---------------------------------------------------------- gameplay */
+  function toggle(w) {
+    if (over || animating) return;
+    var i = selected.indexOf(w);
+    if (i > -1) selected.splice(i, 1);
+    else if (selected.length < 4) selected.push(w);
+    else { RT.toast("Pick at most four"); return; }
+    render();
+    save();
+  }
+
+  function tileFor(w) { return gridEl.querySelector('[data-word="' + w + '"]'); }
+
+  function reducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function rememberRects(words) {
+    var rects = {};
+    words.forEach(function (w) {
+      var tile = tileFor(w);
+      if (tile) rects[w] = tile.getBoundingClientRect();
+    });
+    return rects;
+  }
+
+  function animateFromRects(words, rects, duration) {
+    if (reducedMotion()) return Promise.resolve();
+    return Promise.all(words.map(function (w) {
+      var tile = tileFor(w);
+      var before = rects[w];
+      if (!tile || !before || !tile.animate) return Promise.resolve();
+      var after = tile.getBoundingClientRect();
+      var dx = before.left - after.left;
+      var dy = before.top - after.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return Promise.resolve();
+      return tile.animate([
+        { transform: "translate(" + dx + "px," + dy + "px)" },
+        { transform: "translate(0,0)" }
+      ], { duration: duration, easing: "cubic-bezier(.22,.61,.36,1)" }).finished.catch(function () {});
+    }));
+  }
+
+  function lockSolvedGroup(gi, picked) {
+    var remaining = order.filter(function (w) { return picked.indexOf(w) === -1; });
+    var rects = rememberRects(remaining);
+    solved.push(gi);
+    order = remaining;
+    selected = [];
+    picked.forEach(function (w) {
+      var tile = tileFor(w);
+      if (tile) tile.remove();
+    });
+    renderSolved();
+    gridEl.style.display = order.length ? "grid" : "none";
+    save();
+    animateFromRects(remaining, rects, 360).then(function () {
+      animating = false;
+      renderControls();
+      if (solved.length === GROUPS.length) finish(true);
+    });
+  }
+
+  function solveGroup(gi) {
+    var picked = selected.slice();
+    var rects = rememberRects(order);
+    order = picked.concat(order.filter(function (w) { return picked.indexOf(w) === -1; }));
+    order.forEach(function (w) { gridEl.appendChild(tileFor(w)); });
+
+    animateFromRects(order, rects, 560).then(function () {
+      picked.forEach(function (w) {
+        var tile = tileFor(w);
+        if (tile) tile.classList.add("resolving");
+      });
+      void gridEl.offsetWidth;
+      picked.forEach(function (w) {
+        var tile = tileFor(w);
+        if (tile) tile.setAttribute("data-level", GROUPS[gi].level);
+      });
+      setTimeout(function () { lockSolvedGroup(gi, picked); }, reducedMotion() ? 0 : 500);
+    });
+  }
+
+  function submit() {
+    if (selected.length !== 4 || over || animating) return;
+    animating = true;
+    renderControls();
+
+    /* How many of the four share a group? */
+    var counts = {};
+    selected.forEach(function (w) {
+      var g = owner[w];
+      counts[g] = (counts[g] || 0) + 1;
+    });
+    var best = Math.max.apply(null, Object.keys(counts).map(function (k) { return counts[k]; }));
+    var gi = Object.keys(counts).filter(function (k) { return counts[k] === best; })[0];
+
+    /* Stagger the selected cards before resolving the guess. */
+    if (!reducedMotion()) {
+      selected.forEach(function (w, i) {
+        var t = tileFor(w);
+        if (t) setTimeout(function () { t.classList.add("jump"); }, i * 90);
+      });
+    }
+
+    setTimeout(function () {
+      selected.forEach(function (w) {
+        var t = tileFor(w);
+        if (t) t.classList.remove("jump");
+      });
+      if (best === 4) {
+        solveGroup(Number(gi));
+        return;
+      }
+
+      mistakes++;
+      selected.forEach(function (w) {
+        var t = tileFor(w);
+        if (t) { t.classList.remove("wrong"); void t.offsetWidth; t.classList.add("wrong"); }
+      });
+      if (best === 3) RT.toast("One away…");
+      renderDots();
+      save();
+
+      setTimeout(function () {
+        selected.forEach(function (w) {
+          var t = tileFor(w);
+          if (t) t.classList.remove("wrong");
+        });
+        if (mistakes >= MAX_MISTAKES) revealRest();
+        else { animating = false; renderControls(); }
+      }, reducedMotion() ? 0 : 550);
+    }, reducedMotion() ? 0 : 650);
+  }
+
+  function revealRest() {
+    var remaining = GROUPS
+      .map(function (_, i) { return i; })
+      .filter(function (i) { return solved.indexOf(i) === -1; })
+      .sort(function (a, b) { return GROUPS[a].level - GROUPS[b].level; });
+
+    (function step() {
+      if (!remaining.length) { finish(false); return; }
+      var gi = remaining.shift();
+      solved.push(gi);
+      var words = GROUPS[gi].words.map(function (w) { return w.toUpperCase(); });
+      order = order.filter(function (w) { return words.indexOf(w) === -1; });
+      selected = [];
+      render();
+      setTimeout(step, 700);
+    })();
+  }
+
+  function finish(won) {
+    over = true;
+    RT.saveState(ID, { status: won ? "won" : "lost" });
+    RT.bumpStats(ID, won);
+    renderControls();
+    setTimeout(function () {
+      document.getElementById("end-title").textContent = won ? "Perfect" : "So close";
+      document.getElementById("end-msg").textContent = won
+        ? (mistakes === 0
+            ? "All four groups, not a single mistake. Showing off."
+            : "All four groups with " + mistakes +
+              (mistakes === 1 ? " mistake." : " mistakes."))
+        : "The groups are all revealed above. Have another go?";
+      if (won) RT.celebrate();
+      RT.modal("end").open();
+    }, 500);
+  }
+
+  /* ------------------------------------------------------- persistence */
+  function signature() {
+    return allWords.slice().sort().join("|");
+  }
+  function save() {
+    RT.saveState(ID, {
+      status: over ? (solved.length === GROUPS.length && mistakes < MAX_MISTAKES ? "won" : "lost")
+                   : (solved.length || mistakes || selected.length ? "progress" : "new"),
+      order: order, solved: solved, selected: selected,
+      mistakes: mistakes, sig: signature()
+    });
+  }
+  function load() {
+    var st = RT.gameState(ID);
+    if (!st.order || st.sig !== signature()) {   // puzzle changed -> fresh start
+      RT.resetState(ID);
+      order = RT.shuffle(allWords);
+      return;
+    }
+    order    = st.order;
+    solved   = st.solved || [];
+    selected = st.selected || [];
+    mistakes = st.mistakes || 0;
+    over     = st.status === "won" || st.status === "lost";
+  }
+
+  /* -------------------------------------------------------------- boot */
+  RT.ready(function () {
+    load();
+    render();
+
+    document.getElementById("submit").addEventListener("click", submit);
+    document.getElementById("shuffle").addEventListener("click", function () {
+      if (animating) return;
+      order = RT.shuffle(order); render(); save();
+    });
+    document.getElementById("deselect").addEventListener("click", function () {
+      if (animating) return;
+      selected = []; render(); save();
+    });
+    document.getElementById("replay").addEventListener("click", function () {
+      RT.resetState(ID);
+      order = RT.shuffle(allWords);
+      solved = []; selected = []; mistakes = 0; over = false;
+      render();
+      RT.modal("end").close();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !submitBt.disabled) submit();
+    });
+  });
+})();
+</script>
+</body>
+</html>
