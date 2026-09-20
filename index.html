@@ -301,11 +301,16 @@
     renderCards();
     renderStreak();
     renderFeatured();
+    var welcomeKey = "reb-times-welcome-shown";
     var showWelcome = true;
-    try {
-      showWelcome = sessionStorage.getItem("reb-times-welcome-shown") !== "1";
-      if (showWelcome) sessionStorage.setItem("reb-times-welcome-shown", "1");
-    } catch (e) { /* Storage may be unavailable; the popup can still open. */ }
+    try { showWelcome = localStorage.getItem(welcomeKey) !== "1"; } catch (e) {}
+    if (showWelcome) {
+      try { showWelcome = sessionStorage.getItem(welcomeKey) !== "1"; } catch (e) {}
+    }
+    try { localStorage.setItem(welcomeKey, "1"); }
+    catch (e) {
+      try { sessionStorage.setItem(welcomeKey, "1"); } catch (ignored) {}
+    }
     if (showWelcome) RT.modal("welcome").open();
     document.getElementById("reset-all").addEventListener("click", function () {
       if (!confirm("Clear progress on all ten games? This can't be undone.")) return;
